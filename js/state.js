@@ -3,12 +3,17 @@
    ------------------------------------------------------------
    Everything the player owns lives in SN.state. Call SN.save()
    after any mutation (it's debounced, so calling it often is fine).
+
+   State is stored per save profile — the key comes from
+   SN.Profiles, so switching profiles swaps the whole game state.
    ============================================================ */
 (function (SN) {
   'use strict';
 
-  var SAVE_KEY = 'stickerNook.save.v1';
   var STARTING_COINS = 50;
+
+  /** localStorage key for the profile currently being played. */
+  function saveKey() { return SN.Profiles.saveKey(); }
 
   /** Freshly-installed state. */
   function freshState() {
@@ -107,7 +112,7 @@
   SN.load = function () {
     var raw = null;
     try {
-      var txt = window.localStorage.getItem(SAVE_KEY);
+      var txt = window.localStorage.getItem(saveKey());
       if (txt) raw = JSON.parse(txt);
     } catch (e) {
       console.warn('[Sticker Nook] could not read save:', e);
@@ -125,15 +130,17 @@
 
   function writeNow() {
     saveTimer = null;
+    if (!SN.state || !SN.Profiles.activeId()) return;   // nothing loaded yet
     try {
-      window.localStorage.setItem(SAVE_KEY, JSON.stringify(SN.state));
+      window.localStorage.setItem(saveKey(), JSON.stringify(SN.state));
     } catch (e) {
       console.warn('[Sticker Nook] could not write save:', e);
     }
   }
 
+  /** Wipes the *current* profile only; other profiles are untouched. */
   SN.resetProgress = function () {
-    try { window.localStorage.removeItem(SAVE_KEY); } catch (e) { /* ignore */ }
+    try { window.localStorage.removeItem(saveKey()); } catch (e) { /* ignore */ }
     SN.state = freshState();
     SN.save(true);
   };

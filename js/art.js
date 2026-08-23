@@ -127,9 +127,10 @@
   var HAIR = '#8a5c46', HAIR_HI = '#a97158', SKIN = '#ffe2ce', SKIN_SH = '#f3c4a8';
 
   function girl(theme) {
-    var dress = theme.mood === 'night' ? '#ffd7e6' : '#ffbdd2';
-    var dressHi = theme.mood === 'night' ? '#fff0f6' : '#ffe3ec';
-    var bow = theme.mood === 'night' ? '#a7b4ff' : '#ff9ab6';
+    // Her outfit is the active profile's colour, so each save slot is
+    // recognisable at a glance.
+    var pc = SN.Profiles ? SN.Profiles.activeColor() : SN.PROFILE_COLORS[0];
+    var dress = pc.dress, dressHi = pc.hi, bow = pc.bow;
 
     return '' +
       '<g class="sn-girl" transform="translate(272,396) scale(1.46)" stroke-width="3">' +
@@ -245,6 +246,27 @@
       '<line x1="' + g.CT[0] + '" y1="' + g.CT[1] + '" x2="' + g.C[0] + '" y2="' + g.C[1] + '" stroke-width="4"/>' +
 
       girl(theme) +
+      '</svg>';
+  };
+
+  /** Portrait of the girl in a profile's outfit colour, for the save-slot cards. */
+  SN.avatarSVG = function (c) {
+    return '<svg viewBox="0 0 100 100" stroke="' + INK + '" stroke-width="4" ' +
+      'stroke-linejoin="round" fill="none" aria-hidden="true">' +
+      '<circle cx="50" cy="50" r="45" fill="' + c.chip + '"/>' +
+      '<path d="M50 18 c-21 0 -27 15 -27 30 c0 12 1 20 -2 26 q29 9 58 0 c-3 -6 -2 -14 -2 -26 c0 -15 -6 -30 -27 -30 z" fill="' + HAIR + '"/>' +
+      '<circle cx="50" cy="48" r="22" fill="' + SKIN + '"/>' +
+      '<path d="M28 46 c-1 -16 10 -27 22 -27 c12 0 23 11 22 27 c-4 -8 -7 -13 -11 -15 c-5 8 -17 13 -33 15 z" fill="' + HAIR + '"/>' +
+      '<circle cx="22" cy="41" r="10" fill="' + HAIR + '"/>' +
+      '<circle cx="78" cy="41" r="10" fill="' + HAIR + '"/>' +
+      '<path d="M78 56 a5 5 0 0 1 -8 3 a5 5 0 0 1 8 -3 z" fill="' + c.bow + '"/>' +
+      '<ellipse cx="42" cy="51" rx="3.6" ry="4.8" fill="' + INK + '" stroke="none"/>' +
+      '<ellipse cx="58" cy="51" rx="3.6" ry="4.8" fill="' + INK + '" stroke="none"/>' +
+      '<circle cx="43.3" cy="49.4" r="1.4" fill="#fff" stroke="none"/>' +
+      '<circle cx="59.3" cy="49.4" r="1.4" fill="#fff" stroke="none"/>' +
+      '<ellipse cx="33" cy="57" rx="5" ry="3.2" fill="#ffa8bf" stroke="none" opacity=".8"/>' +
+      '<ellipse cx="67" cy="57" rx="5" ry="3.2" fill="#ffa8bf" stroke="none" opacity=".8"/>' +
+      '<path d="M46 59 q4 4.5 8 0" fill="none" stroke-width="2.4" stroke-linecap="round"/>' +
       '</svg>';
   };
 

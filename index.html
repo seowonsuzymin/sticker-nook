@@ -11,7 +11,20 @@
 </head>
 <body>
 
-<div id="app">
+<!-- ── Profile picker (shown before the game) ─────────────────── -->
+<div class="profile-screen" id="profileScreen" hidden>
+  <div class="ps-inner">
+    <div class="ps-brand">
+      <span class="hud-logo">✿</span>
+      <h1>Sticker Nook</h1>
+    </div>
+    <p class="ps-sub">Choose a nook to decorate</p>
+    <div class="ps-slots" id="psSlots"></div>
+    <p class="ps-foot">Each nook keeps its own coins, stickers, rooms and layouts.</p>
+  </div>
+</div>
+
+<div id="app" hidden>
 
   <!-- ── Header / HUD ─────────────────────────────────────────── -->
   <header class="hud">
@@ -116,8 +129,13 @@
 <div class="overlay modal-overlay" id="settingsOverlay" hidden>
   <div class="modal settings-modal">
     <h2>Settings</h2>
+    <div class="settings-who" id="settingsWho"></div>
     <div class="settings-stats" id="settingsStats"></div>
     <div class="settings-list">
+      <button class="settings-row" id="btnSwitchProfile">
+        <span class="settings-row-icon">👤</span>
+        <span><b>Switch nook</b><small>Back to the profile picker — this nook is saved</small></span>
+      </button>
       <button class="settings-row" id="btnClearRoom">
         <span class="settings-row-icon">🧹</span>
         <span><b>Clear this room</b><small>Remove every sticker from the current room</small></span>
@@ -133,16 +151,33 @@
   </div>
 </div>
 
+<!-- ── New profile dialog ─────────────────────────────────────── -->
+<div class="overlay modal-overlay" id="newProfileOverlay" hidden>
+  <div class="modal">
+    <h2>New nook</h2>
+    <p>Give it a name and pick an outfit colour.</p>
+    <input class="np-name" id="npName" type="text" maxlength="14"
+           placeholder="My Nook" autocomplete="off" spellcheck="false">
+    <div class="np-colors" id="npColors"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="npCancel">Cancel</button>
+      <button class="btn btn-play" id="npCreate">Create</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast-stack" id="toastStack"></div>
 
 <script src="js/data/stickers.js"></script>
 <script src="js/data/rooms.js"></script>
+<script src="js/profiles.js"></script>
 <script src="js/state.js"></script>
 <script src="js/art.js"></script>
 <script src="js/room.js"></script>
 <script src="js/tray.js"></script>
 <script src="js/minigame.js"></script>
 <script src="js/ui.js"></script>
+<script src="js/profile-screen.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

@@ -42,6 +42,7 @@
   /* ── Coin counter ──────────────────────────────────────── */
 
   UI.renderCoins = function (bump) {
+    if (!SN.state) return;                 // still on the profile picker
     coinAmount.textContent = SN.state.coins;
     if (bump) {
       coinPill.classList.remove('is-bump');
@@ -53,6 +54,7 @@
   /* ── Room switcher ─────────────────────────────────────── */
 
   UI.renderTabs = function () {
+    if (!SN.state) return;                 // still on the profile picker
     tabsEl.innerHTML = SN.ROOMS.map(function (r) {
       var unlocked = SN.roomUnlocked(r.id);
       var active = SN.state.activeRoom === r.id;
@@ -171,6 +173,11 @@
     document.getElementById('btnSettings').addEventListener('click', UI.openSettings);
     document.getElementById('btnCloseSettings').addEventListener('click', UI.closeSettings);
 
+    document.getElementById('btnSwitchProfile').addEventListener('click', function () {
+      UI.closeSettings();
+      SN.leaveGame();
+    });
+
     document.getElementById('btnClearRoom').addEventListener('click', function () {
       var r = SN.ROOM_BY_ID[SN.state.activeRoom];
       UI.closeSettings();
@@ -192,10 +199,11 @@
 
     document.getElementById('btnReset').addEventListener('click', function () {
       UI.closeSettings();
+      var who = SN.Profiles.active();
       UI.modal({
-        title: 'Reset everything?',
-        body: 'This wipes your coins, unlocked stickers, unlocked rooms and all sticker layouts. ' +
-          'It cannot be undone.',
+        title: 'Reset ' + who.name + '?',
+        body: 'This wipes the coins, stickers, rooms and layouts in <b>this nook only</b> — ' +
+          'your other nooks are untouched. It cannot be undone.',
         actions: [
           { label: 'Keep my nook', ghost: true },
           {
@@ -214,6 +222,12 @@
   }
 
   UI.openSettings = function () {
+    var p = SN.Profiles.active();
+    var c = SN.Profiles.colorFor(p.color);
+    document.getElementById('settingsWho').innerHTML =
+      '<span class="settings-who-avatar">' + SN.avatarSVG(c) + '</span>' +
+      '<span>Playing as <b>' + p.name + '</b></span>';
+
     var s = SN.state.stats;
     document.getElementById('settingsStats').innerHTML =
       stat('Coins earned', s.totalEarned) +

@@ -6,6 +6,17 @@ step, no accounts. Progress saves to `localStorage` automatically.
 **To play:** double-click `index.html`. That's it. (It also works served over http if you
 prefer: `python3 -m http.server` then open `localhost:8000`.)
 
+## Save profiles
+
+The game opens on a picker with **3 save slots**. Each nook is completely
+independent — its own coins, unlocked stickers, unlocked rooms and per-room
+layouts — so you can start over in a fresh slot without touching an existing one.
+Name each nook and pick an outfit colour; the character wears it in-game, so you
+can tell your saves apart at a glance.
+
+Switch nooks any time via ⚙ → **Switch nook**. "Reset progress" only wipes the nook
+you're currently in. Deleting a nook from the picker removes just that slot's save.
+
 ## The loop
 
 1. Drag stickers from the tray into the isometric room. Drag to move, corner handles to
@@ -26,14 +37,26 @@ css/style.css         all styling and the pastel design tokens
 js/
   data/stickers.js    the sticker catalog          ← add stickers here
   data/rooms.js       the room themes              ← add rooms here
+  profiles.js         save slots: index, per-profile keys, outfit colours
   state.js            state shape + localStorage save/load/reset + event bus
-  art.js              isometric room renderer + the girl character
+  art.js              isometric room renderer, the girl character, avatars
   room.js             placed stickers: drag, resize, rotate, flip, delete, z-order
   tray.js             sticker tray, category filters, purchase flow
   minigame.js         Sticker Catch
   ui.js               coin HUD, room switcher, modals, toasts, settings
-  main.js             boot
+  profile-screen.js   the "choose your nook" picker
+  main.js             boot + profile switching
 ```
+
+### Storage keys
+
+| key | holds |
+| --- | --- |
+| `stickerNook.profiles.v1` | the list of save slots + which was last active |
+| `stickerNook.save.v1.<profileId>` | one slot's full game state |
+
+A save written before profiles existed (`stickerNook.save.v1`, no suffix) is
+migrated into the first slot on load rather than discarded.
 
 ## Adding a sticker
 
