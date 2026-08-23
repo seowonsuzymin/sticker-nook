@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Sticker Nook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ── Header / HUD ─────────────────────────────────────────── -->
+  <header class="hud">
+    <div class="hud-brand">
+      <span class="hud-logo">✿</span>
+      <h1>Sticker Nook</h1>
+    </div>
+
+    <div class="hud-right">
+      <div class="coin-pill" id="coinPill" title="Your coins">
+        <span class="coin-icon"></span>
+        <span class="coin-amount" id="coinAmount">0</span>
+      </div>
+      <button class="btn btn-play" id="btnPlay">
+        <span class="btn-play-icon">▶</span> Earn Coins
+      </button>
+      <button class="btn btn-icon" id="btnSettings" title="Settings">⚙</button>
+    </div>
+  </header>
+
+  <!-- ── Room tabs ────────────────────────────────────────────── -->
+  <nav class="room-tabs" id="roomTabs"></nav>
+
+  <!-- ── Stage ────────────────────────────────────────────────── -->
+  <main class="stage-wrap">
+    <div class="stage" id="stage">
+      <div class="room-layer" id="roomLayer"></div>
+      <div class="sticker-layer" id="stickerLayer"></div>
+      <div class="stage-hint" id="stageHint">Drag a sticker from the tray below ✨</div>
+    </div>
+  </main>
+
+  <!-- ── Sticker tray ─────────────────────────────────────────── -->
+  <section class="tray">
+    <div class="tray-head">
+      <div class="tray-cats" id="trayCats"></div>
+      <div class="tray-count" id="trayCount"></div>
+    </div>
+    <div class="tray-scroll" id="trayScroll"></div>
+  </section>
+
+</div>
+
+<!-- ── Mini-game overlay ──────────────────────────────────────── -->
+<div class="overlay catch-overlay" id="catchOverlay" hidden>
+  <div class="catch-frame">
+    <div class="catch-hud">
+      <div class="catch-stat">
+        <span class="catch-stat-label">Time</span>
+        <span class="catch-stat-value" id="catchTime">40</span>
+      </div>
+      <div class="catch-stat catch-stat-coins">
+        <span class="catch-stat-label">Earned</span>
+        <span class="catch-stat-value" id="catchCoins">0</span>
+      </div>
+      <div class="catch-stat">
+        <span class="catch-stat-label">Combo</span>
+        <span class="catch-stat-value" id="catchCombo">x1</span>
+      </div>
+      <button class="btn btn-icon catch-quit" id="catchQuit" title="Quit">✕</button>
+    </div>
+    <div class="catch-timebar"><div class="catch-timebar-fill" id="catchTimebar"></div></div>
+    <div class="catch-field" id="catchField"></div>
+
+    <!-- countdown -->
+    <div class="catch-countdown" id="catchCountdown" hidden><span>3</span></div>
+
+    <!-- results -->
+    <div class="catch-results" id="catchResults" hidden>
+      <div class="results-card">
+        <div class="results-burst">✧</div>
+        <h2>Nice catching!</h2>
+        <div class="results-coins">
+          <span class="coin-icon"></span>
+          <span id="resultCoins">0</span>
+        </div>
+        <div class="results-rows">
+          <div><span>Items caught</span><b id="resultCaught">0</b></div>
+          <div><span>Best combo</span><b id="resultCombo">0</b></div>
+          <div><span>Oops! blobs</span><b id="resultBad">0</b></div>
+        </div>
+        <div class="results-actions">
+          <button class="btn btn-ghost" id="btnCollect">Collect</button>
+          <button class="btn btn-play" id="btnAgain">Play again</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Generic modal ──────────────────────────────────────────── -->
+<div class="overlay modal-overlay" id="modalOverlay" hidden>
+  <div class="modal" id="modal">
+    <div class="modal-art" id="modalArt"></div>
+    <h2 id="modalTitle">Title</h2>
+    <p id="modalBody">Body</p>
+    <div class="modal-actions" id="modalActions"></div>
+  </div>
+</div>
+
+<!-- ── Settings sheet ─────────────────────────────────────────── -->
+<div class="overlay modal-overlay" id="settingsOverlay" hidden>
+  <div class="modal settings-modal">
+    <h2>Settings</h2>
+    <div class="settings-stats" id="settingsStats"></div>
+    <div class="settings-list">
+      <button class="settings-row" id="btnClearRoom">
+        <span class="settings-row-icon">🧹</span>
+        <span><b>Clear this room</b><small>Remove every sticker from the current room</small></span>
+      </button>
+      <button class="settings-row settings-row-danger" id="btnReset">
+        <span class="settings-row-icon">↺</span>
+        <span><b>Reset progress</b><small>Wipe coins, stickers, rooms &amp; layouts</small></span>
+      </button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="btnCloseSettings">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-stack" id="toastStack"></div>
+
+<script src="js/data/stickers.js"></script>
+<script src="js/data/rooms.js"></script>
+<script src="js/state.js"></script>
+<script src="js/art.js"></script>
+<script src="js/room.js"></script>
+<script src="js/tray.js"></script>
+<script src="js/minigame.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
