@@ -87,7 +87,7 @@
     if (!legacy || index.profiles.length) return;
 
     var p = {
-      id: uid(), name: 'My Nook', color: 'pink',
+      id: uid(), name: 'My Nook', color: 'pink', character: 'girl',
       created: Date.now(), lastPlayed: Date.now()
     };
     try {
@@ -116,6 +116,8 @@
             id: String(p.id),
             name: cleanName(p.name),
             color: colorFor(p.color).id,
+            // Profiles made before characters existed default to the girl.
+            character: SN.characterFor(p.character).id,
             created: Number(p.created) || 0,
             lastPlayed: Number(p.lastPlayed) || 0
           };
@@ -165,12 +167,13 @@
 
   /* ── Writing ───────────────────────────────────────────── */
 
-  Profiles.create = function (name, colorId) {
+  Profiles.create = function (name, colorId, characterId) {
     if (Profiles.isFull()) return null;
     var p = {
       id: uid(),
       name: cleanName(name),
       color: colorFor(colorId).id,
+      character: SN.characterFor(characterId).id,
       created: Date.now(),
       lastPlayed: 0
     };

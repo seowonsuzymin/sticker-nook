@@ -225,7 +225,7 @@
     var p = SN.Profiles.active();
     var c = SN.Profiles.colorFor(p.color);
     document.getElementById('settingsWho').innerHTML =
-      '<span class="settings-who-avatar">' + SN.avatarSVG(c) + '</span>' +
+      '<span class="settings-who-avatar">' + SN.avatarSVG(c, p.character) + '</span>' +
       '<span>Playing as <b>' + p.name + '</b></span>';
 
     var s = SN.state.stats;

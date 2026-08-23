@@ -122,66 +122,53 @@
       'patternUnits="userSpaceOnUse"><g stroke="none">' + content + '</g></pattern>';
   }
 
-  /* ── The girl ──────────────────────────────────────────── */
+  /* ── The character ─────────────────────────────────────── */
 
-  var HAIR = '#8a5c46', HAIR_HI = '#a97158', SKIN = '#ffe2ce', SKIN_SH = '#f3c4a8';
+  /**
+   * The sitting body, shared by every character. Only the head differs —
+   * that comes from the character catalog in js/data/characters.js.
+   * Limb colour and outfit colour both come from the active profile.
+   */
+  function characterBody(ch, pc, extraClass) {
+    var limb = ch.limb, paw = ch.paw;
 
-  function girl(theme) {
-    // Her outfit is the active profile's colour, so each save slot is
-    // recognisable at a glance.
+    return '' +
+      // crossed legs + socks/paws
+      '<path d="M17 116 q33 -15 66 0 q6 15 -9 20 h-48 q-15 -5 -9 -20 z" fill="' + limb + '"/>' +
+      '<ellipse cx="27" cy="130" rx="12" ry="7.5" fill="' + paw + '"/>' +
+      '<ellipse cx="73" cy="130" rx="12" ry="7.5" fill="' + paw + '"/>' +
+      '<path d="M34 120 q16 7 32 0" fill="none" stroke-width="2.2" opacity=".35"/>' +
+
+      // pinafore dress in the profile's colour
+      '<path d="M50 62 c-16 0 -22 10 -25 25 c-3 15 -7 25 -8 29 q33 12 66 0 c-1 -4 -5 -14 -8 -29 c-3 -15 -9 -25 -25 -25 z" fill="' + pc.dress + '"/>' +
+      '<path d="M25 106 q25 10 50 0" fill="none" stroke-width="2.2" opacity=".3"/>' +
+      '<path d="M39 65 q11 9 22 0" fill="none" stroke-width="2.6"/>' +
+      '<circle cx="50" cy="80" r="3.6" fill="' + pc.hi + '"/>' +
+
+      // arms resting in the lap — drawn over the dress so they stay visible.
+      // Dark pass first for the outline, then the limb fill on top.
+      '<path d="M28 78 q-7 20 11 27" fill="none" stroke="' + INK + '" stroke-width="14" stroke-linecap="round"/>' +
+      '<path d="M72 78 q7 20 -11 27" fill="none" stroke="' + INK + '" stroke-width="14" stroke-linecap="round"/>' +
+      '<path d="M28 78 q-7 20 11 27" fill="none" stroke="' + limb + '" stroke-width="10" stroke-linecap="round"/>' +
+      '<path d="M72 78 q7 20 -11 27" fill="none" stroke="' + limb + '" stroke-width="10" stroke-linecap="round"/>' +
+      '<circle cx="40" cy="105" r="6.5" fill="' + limb + '"/>' +
+      '<circle cx="60" cy="105" r="6.5" fill="' + limb + '"/>' +
+
+      ch.head(pc);
+  }
+
+  function character(theme) {
+    // Outfit colour and species both come from the active profile, so each
+    // save slot is recognisable at a glance.
+    var p = SN.Profiles ? SN.Profiles.active() : null;
     var pc = SN.Profiles ? SN.Profiles.activeColor() : SN.PROFILE_COLORS[0];
-    var dress = pc.dress, dressHi = pc.hi, bow = pc.bow;
+    var ch = SN.characterFor(p && p.character);
 
     return '' +
       '<g class="sn-girl" transform="translate(272,396) scale(1.46)" stroke-width="3">' +
       '<ellipse cx="50" cy="137" rx="43" ry="10" fill="#000" opacity=".13" stroke="none"/>' +
       '<g class="sn-girl-bob">' +
-
-      // crossed legs + socks
-      '<path d="M17 116 q33 -15 66 0 q6 15 -9 20 h-48 q-15 -5 -9 -20 z" fill="' + SKIN + '"/>' +
-      '<ellipse cx="27" cy="130" rx="12" ry="7.5" fill="#fffdf8"/>' +
-      '<ellipse cx="73" cy="130" rx="12" ry="7.5" fill="#fffdf8"/>' +
-      '<path d="M34 120 q16 7 32 0" fill="none" stroke-width="2.2" opacity=".35"/>' +
-
-      // pinafore dress
-      '<path d="M50 62 c-16 0 -22 10 -25 25 c-3 15 -7 25 -8 29 q33 12 66 0 c-1 -4 -5 -14 -8 -29 c-3 -15 -9 -25 -25 -25 z" fill="' + dress + '"/>' +
-      '<path d="M25 106 q25 10 50 0" fill="none" stroke-width="2.2" opacity=".3"/>' +
-      '<path d="M39 65 q11 9 22 0" fill="none" stroke-width="2.6"/>' +
-      '<circle cx="50" cy="80" r="3.6" fill="' + dressHi + '"/>' +
-
-      // arms resting in her lap — drawn over the dress so they stay visible.
-      // Dark pass first for the outline, then the skin fill on top.
-      '<path d="M28 78 q-7 20 11 27" fill="none" stroke="' + INK + '" stroke-width="14" stroke-linecap="round"/>' +
-      '<path d="M72 78 q7 20 -11 27" fill="none" stroke="' + INK + '" stroke-width="14" stroke-linecap="round"/>' +
-      '<path d="M28 78 q-7 20 11 27" fill="none" stroke="' + SKIN + '" stroke-width="10" stroke-linecap="round"/>' +
-      '<path d="M72 78 q7 20 -11 27" fill="none" stroke="' + SKIN + '" stroke-width="10" stroke-linecap="round"/>' +
-      '<circle cx="40" cy="105" r="6.5" fill="' + SKIN + '"/>' +
-      '<circle cx="60" cy="105" r="6.5" fill="' + SKIN + '"/>' +
-
-      // hair behind the head
-      '<path d="M50 6 c-25 0 -32 18 -32 36 c0 15 1 25 -2 32 q34 10 68 0 c-3 -7 -2 -17 -2 -32 c0 -18 -7 -36 -32 -36 z" fill="' + HAIR + '"/>' +
-
-      // face
-      '<circle cx="50" cy="40" r="26" fill="' + SKIN + '"/>' +
-
-      // fringe + side buns
-      '<path d="M24 38 c-1 -19 11 -32 26 -32 c15 0 27 13 26 32 c-4 -9 -8 -15 -12 -18 c-6 9 -20 15 -40 18 z" fill="' + HAIR + '"/>' +
-      '<circle cx="16" cy="29" r="12" fill="' + HAIR + '"/>' +
-      '<circle cx="84" cy="29" r="12" fill="' + HAIR + '"/>' +
-      '<path d="M10 24 a9 9 0 0 1 9 -3" fill="none" stroke="' + HAIR_HI + '" stroke-width="4" stroke-linecap="round"/>' +
-      '<path d="M81 21 a9 9 0 0 1 9 3" fill="none" stroke="' + HAIR_HI + '" stroke-width="4" stroke-linecap="round"/>' +
-      '<path d="M84 41 a6 6 0 0 1 -9 4 a6 6 0 0 1 9 -4 z" fill="' + bow + '"/>' +
-
-      // face details
-      '<g class="sn-eye"><ellipse cx="39" cy="44" rx="4.4" ry="5.8" fill="' + INK + '" stroke="none"/>' +
-      '<circle cx="40.7" cy="42" r="1.7" fill="#fff" stroke="none"/></g>' +
-      '<g class="sn-eye"><ellipse cx="61" cy="44" rx="4.4" ry="5.8" fill="' + INK + '" stroke="none"/>' +
-      '<circle cx="62.7" cy="42" r="1.7" fill="#fff" stroke="none"/></g>' +
-      '<ellipse cx="28" cy="51" rx="6.5" ry="4" fill="#ffa8bf" stroke="none" opacity=".8"/>' +
-      '<ellipse cx="72" cy="51" rx="6.5" ry="4" fill="#ffa8bf" stroke="none" opacity=".8"/>' +
-      '<path d="M45 53 q5 5.5 10 0" fill="none" stroke-width="2.4" stroke-linecap="round"/>' +
-      '<path d="M32 36 q6 -4 11 -1 M57 35 q5 -3 11 1" fill="none" stroke-width="2" stroke="' + SKIN_SH + '"/>' +
-
+      characterBody(ch, pc) +
       '</g></g>';
   }
 
@@ -245,28 +232,22 @@
       '<line x1="' + g.C[0] + '" y1="' + (g.C[1] - SK) + '" x2="' + g.R[0] + '" y2="' + (g.R[1] - SK) + '" stroke-width="3"/>' +
       '<line x1="' + g.CT[0] + '" y1="' + g.CT[1] + '" x2="' + g.C[0] + '" y2="' + g.C[1] + '" stroke-width="4"/>' +
 
-      girl(theme) +
+      character(theme) +
       '</svg>';
   };
 
-  /** Portrait of the girl in a profile's outfit colour, for the save-slot cards. */
-  SN.avatarSVG = function (c) {
-    return '<svg viewBox="0 0 100 100" stroke="' + INK + '" stroke-width="4" ' +
+  /**
+   * Portrait of a character in a profile's outfit colour, for the save-slot
+   * cards and the character picker. The blink class is stripped so a wall of
+   * avatars doesn't blink in unison.
+   */
+  SN.avatarSVG = function (c, charId) {
+    var ch = SN.characterFor(charId);
+    var head = ch.head(c).replace(/class="sn-eye"/g, '');
+    return '<svg viewBox="0 0 100 100" stroke="' + INK + '" stroke-width="3.4" ' +
       'stroke-linejoin="round" fill="none" aria-hidden="true">' +
       '<circle cx="50" cy="50" r="45" fill="' + c.chip + '"/>' +
-      '<path d="M50 18 c-21 0 -27 15 -27 30 c0 12 1 20 -2 26 q29 9 58 0 c-3 -6 -2 -14 -2 -26 c0 -15 -6 -30 -27 -30 z" fill="' + HAIR + '"/>' +
-      '<circle cx="50" cy="48" r="22" fill="' + SKIN + '"/>' +
-      '<path d="M28 46 c-1 -16 10 -27 22 -27 c12 0 23 11 22 27 c-4 -8 -7 -13 -11 -15 c-5 8 -17 13 -33 15 z" fill="' + HAIR + '"/>' +
-      '<circle cx="22" cy="41" r="10" fill="' + HAIR + '"/>' +
-      '<circle cx="78" cy="41" r="10" fill="' + HAIR + '"/>' +
-      '<path d="M78 56 a5 5 0 0 1 -8 3 a5 5 0 0 1 8 -3 z" fill="' + c.bow + '"/>' +
-      '<ellipse cx="42" cy="51" rx="3.6" ry="4.8" fill="' + INK + '" stroke="none"/>' +
-      '<ellipse cx="58" cy="51" rx="3.6" ry="4.8" fill="' + INK + '" stroke="none"/>' +
-      '<circle cx="43.3" cy="49.4" r="1.4" fill="#fff" stroke="none"/>' +
-      '<circle cx="59.3" cy="49.4" r="1.4" fill="#fff" stroke="none"/>' +
-      '<ellipse cx="33" cy="57" rx="5" ry="3.2" fill="#ffa8bf" stroke="none" opacity=".8"/>' +
-      '<ellipse cx="67" cy="57" rx="5" ry="3.2" fill="#ffa8bf" stroke="none" opacity=".8"/>' +
-      '<path d="M46 59 q4 4.5 8 0" fill="none" stroke-width="2.4" stroke-linecap="round"/>' +
+      '<g transform="translate(50 56) scale(0.86) translate(-50 -40)">' + head + '</g>' +
       '</svg>';
   };
 

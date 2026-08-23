@@ -760,6 +760,33 @@ body.is-dragging { cursor: grabbing; user-select: none; }
 .ps-empty-sub { font-size: 12px; }
 
 /* new-profile dialog */
+.np-chars {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.np-char {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 7px 4px 6px;
+  font: inherit;
+  color: var(--ink);
+  background: #fff;
+  border: 2px solid var(--ink);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  box-shadow: 0 3px 0 rgba(74, 59, 82, .16);
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.np-char:hover { transform: translateY(-2px); }
+.np-char.is-active {
+  background: var(--pink-pale);
+  box-shadow: 0 3px 0 var(--ink), 0 0 0 3px rgba(255, 143, 176, .5);
+}
+.np-char-art { width: 52px; height: 52px; }
+.np-char-art svg { width: 100%; height: 100%; display: block; }
+.np-char-name { font-size: 11px; font-weight: 700; }
+
 .np-name {
   width: 100%;
   font: 700 16px var(--font);

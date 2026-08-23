@@ -11,8 +11,10 @@ prefer: `python3 -m http.server` then open `localhost:8000`.)
 The game opens on a picker with **3 save slots**. Each nook is completely
 independent — its own coins, unlocked stickers, unlocked rooms and per-room
 layouts — so you can start over in a fresh slot without touching an existing one.
-Name each nook and pick an outfit colour; the character wears it in-game, so you
-can tell your saves apart at a glance.
+
+When you make a nook you pick a **character** (Girl, Bear, Cat, Puppy, Bunny or
+Panda) and an **outfit colour**. Your character sits in the room wearing that
+colour and appears on the save-slot card, so your nooks are easy to tell apart.
 
 Switch nooks any time via ⚙ → **Switch nook**. "Reset progress" only wipes the nook
 you're currently in. Deleting a nook from the picker removes just that slot's save.
@@ -37,6 +39,7 @@ css/style.css         all styling and the pastel design tokens
 js/
   data/stickers.js    the sticker catalog          ← add stickers here
   data/rooms.js       the room themes              ← add rooms here
+  data/characters.js  playable characters          ← add characters here
   profiles.js         save slots: index, per-profile keys, outfit colours
   state.js            state shape + localStorage save/load/reset + event bus
   art.js              isometric room renderer, the girl character, avatars
@@ -94,6 +97,32 @@ Append one entry to `ROOMS` in `js/data/rooms.js`:
 
 Existing saves are migrated forward on load, so new stickers and rooms appear for players
 already mid-game without wiping their progress.
+
+## Adding a character
+
+Every character shares one sitting body (drawn in `art.js`) and supplies only its
+own head, which is what keeps them looking like one set. Append an entry to
+`CHARACTERS` in `js/data/characters.js`:
+
+```js
+{
+  id: 'fox',                    // stored on the profile — never rename
+  name: 'Fox',                  // label under the picker tile
+  limb: '#f0a868',              // arm and leg colour
+  paw: '#fff3e2',               // sock / paw colour
+  head: function (c) {          // c = the profile's outfit palette
+    return '<path d="..." fill="#f0a868"/>' +   // ears
+      '<circle cx="50" cy="42" r="27" fill="#f0a868"/>' +
+      bow(76, 30, 1.4, c) +     // a bow in the player's chosen colour
+      eyes(40, 4.2, 5.4, 12) + blush(51, 26) + smile(56, 11);
+  }
+}
+```
+
+The head draws into the character's local 100×140 box: the head sits at about
+(50, 42) with a radius of ~27, ears go above it. `eye`/`eyes`/`blush`/`smile`/`bow`
+are shared helpers at the top of the file. The picker tiles and save-slot avatars
+are generated from the same `head`, so there's no second drawing to maintain.
 
 ## Tuning the economy
 

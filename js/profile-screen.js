@@ -4,8 +4,9 @@
 (function (SN) {
   'use strict';
 
-  var screenEl, slotsEl, dlgEl, nameEl, colorsEl;
+  var screenEl, slotsEl, dlgEl, nameEl, colorsEl, charsEl;
   var pendingColor = 'pink';
+  var pendingChar = 'girl';
 
   var PS = SN.ProfileScreen = {};
 
@@ -15,6 +16,7 @@
     dlgEl = document.getElementById('newProfileOverlay');
     nameEl = document.getElementById('npName');
     colorsEl = document.getElementById('npColors');
+    charsEl = document.getElementById('npChars');
 
     document.getElementById('npCancel').addEventListener('click', closeDialog);
     document.getElementById('npCreate').addEventListener('click', createFromDialog);
@@ -64,7 +66,7 @@
     var s = SN.Profiles.summary(p.id);
     return '<div class="ps-slot is-filled" data-id="' + p.id + '" style="--chip:' + c.chip + '">' +
       '<button class="ps-del" title="Delete this nook" aria-label="Delete ' + esc(p.name) + '">✕</button>' +
-      '<div class="ps-avatar">' + SN.avatarSVG(c) + '</div>' +
+      '<div class="ps-avatar">' + SN.avatarSVG(c, p.character) + '</div>' +
       '<div class="ps-name">' + esc(p.name) + '</div>' +
       '<div class="ps-stats">' +
       '<span><span class="coin-icon coin-icon-sm"></span>' + s.coins + '</span>' +
@@ -93,15 +95,35 @@
   /* ── New-profile dialog ────────────────────────────────── */
 
   function openDialog() {
-    pendingColor = SN.PROFILE_COLORS[SN.Profiles.count() % SN.PROFILE_COLORS.length].id;
+    var n = SN.Profiles.count();
+    pendingColor = SN.PROFILE_COLORS[n % SN.PROFILE_COLORS.length].id;
+    pendingChar = SN.CHARACTERS[n % SN.CHARACTERS.length].id;
     nameEl.value = '';
     nameEl.placeholder = 'My Nook';
+    renderChars();
     renderColors();
     dlgEl.hidden = false;
     setTimeout(function () { nameEl.focus(); }, 30);
   }
 
   function closeDialog() { dlgEl.hidden = true; }
+
+  function renderChars() {
+    var c = SN.Profiles.colorFor(pendingColor);
+    charsEl.innerHTML = SN.CHARACTERS.map(function (ch) {
+      return '<button class="np-char' + (ch.id === pendingChar ? ' is-active' : '') +
+        '" data-char="' + ch.id + '" aria-label="' + ch.name + '">' +
+        '<span class="np-char-art">' + SN.avatarSVG(c, ch.id) + '</span>' +
+        '<span class="np-char-name">' + ch.name + '</span>' +
+        '</button>';
+    }).join('');
+    charsEl.querySelectorAll('.np-char').forEach(function (b) {
+      b.addEventListener('click', function () {
+        pendingChar = b.dataset.char;
+        renderChars();
+      });
+    });
+  }
 
   function renderColors() {
     colorsEl.innerHTML = SN.PROFILE_COLORS.map(function (c) {
@@ -113,12 +135,13 @@
       b.addEventListener('click', function () {
         pendingColor = b.dataset.color;
         renderColors();
+        renderChars();          // tiles preview the newly picked colour
       });
     });
   }
 
   function createFromDialog() {
-    var p = SN.Profiles.create(nameEl.value, pendingColor);
+    var p = SN.Profiles.create(nameEl.value, pendingColor, pendingChar);
     if (!p) return;
     closeDialog();
     SN.enterGame(p.id);
@@ -131,7 +154,7 @@
     if (!p) return;
     var s = SN.Profiles.summary(id);
     SN.UI.modal({
-      art: SN.avatarSVG(SN.Profiles.colorFor(p.color)),
+      art: SN.avatarSVG(SN.Profiles.colorFor(p.color), p.character),
       title: 'Delete ' + p.name + '?',
       body: 'This nook has ' + s.coins + ' coins, ' + s.owned + ' stickers and ' +
         s.placed + ' placed decorations. Deleting it cannot be undone — your other nooks are unaffected.',
