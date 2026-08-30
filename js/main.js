@@ -26,7 +26,7 @@
     if (!mounted) {
       SN.Room.init();
       SN.Tray.init();
-      SN.Catch.init();
+      SN.Arcade.init();
       mounted = true;
     } else {
       SN.Room.render();

@@ -24,9 +24,8 @@ you're currently in. Deleting a nook from the picker removes just that slot's sa
 1. Drag stickers from the tray into the isometric room. Drag to move, corner handles to
    resize / rotate / flip, ✕ to delete. `Delete` and `Esc` work on the selected sticker too.
 2. Most stickers and rooms are locked behind coins.
-3. Coins come only from **Sticker Catch** — the "Earn Coins" button. 40 seconds of tapping
-   falling stars, hearts, ribbons and flowers. Combos raise your multiplier up to ×5; tapping
-   a void blob costs 5 coins and resets the combo.
+3. Coins come only from the mini-games. **"Earn Coins" deals you one at random** (never the
+   same one twice in a row) — see below.
 4. Spend coins on stickers and new room themes. Each room keeps its own independent layout.
 
 Reset progress lives behind the ⚙ button, alongside a per-room "clear" and your run stats.
@@ -45,7 +44,10 @@ js/
   art.js              isometric room renderer, the girl character, avatars
   room.js             placed stickers: drag, resize, rotate, flip, delete, z-order
   tray.js             sticker tray, category filters, purchase flow
-  minigame.js         Sticker Catch
+  games/arcade.js     shared shell: HUD, countdown, timer, results, random picker
+  games/catch.js      Sticker Catch              ← add mini-games alongside these
+  games/memory.js     Memory Match
+  games/peekaboo.js   Peek-a-Boo
   ui.js               coin HUD, room switcher, modals, toasts, settings
   profile-screen.js   the "choose your nook" picker
   main.js             boot + profile switching
@@ -81,6 +83,42 @@ the tray, categories, save file and shop all pick it up automatically.
 inherited from the wrapper, so shapes only need a `fill` — use `stroke="none"` on small
 details you don't want outlined, and `fill="none"` on open paths. `C` is the shared pastel
 palette defined at the top of the file; sticking to it keeps everything looking like one set.
+
+## The mini-games
+
+| Game | Length | How it plays |
+| --- | --- | --- |
+| **Sticker Catch** | 40s | Stars, hearts, ribbons and flowers fall — tap them before they land. Combo ×5 max. Void blobs cost 5 coins. |
+| **Memory Match** | 50s | Sixteen cards, eight pairs. You get a one-second peek at the board, then match them from memory. Back-to-back matches build a ×3 streak; clearing the board early pays a time bonus. |
+| **Peek-a-Boo** | 35s | Nine burrows, and your characters pop out of them. Tap them before they duck back down. Combo ×5 max, and the blobs are back. |
+
+A strong run in any of them lands roughly in the 300–500 coin range, so the random pick
+never feels like a bad deal.
+
+## Adding a mini-game
+
+Games live in `js/games/` and register themselves with the arcade, which owns the overlay,
+HUD, countdown, timer bar and results card. Write the file, add a `<script>` tag for it in
+`index.html`, and it joins the random rotation automatically — nothing else to wire up.
+
+```js
+SN.Arcade.register({
+  id: 'my-game',                    // unique
+  name: 'My Game',                  // announced during the countdown
+  tagline: 'Do the thing!',         // one line of instructions
+  winTitle: 'Well played!',         // heading on the results card
+  meter: 'Combo',                   // label for the third HUD cell
+  duration: 40,                     // seconds (0 = untimed)
+  start: function (ctx) { /* build into ctx.field */ },
+  tick: function (dt, ctx) { /* optional, once per frame */ },
+  stop: function () { /* cancel your timers */ }
+});
+```
+
+The `ctx` handed to `start`/`tick` gives you `field`, `timeLeft()`, `award(n, x, y)`,
+`penalize(n, x, y)`, `bonus(n)`, `popText()`, `shake()`, `setMeter()`, `breakMeter()`,
+`peakCombo(n)`, `rows([...])` for the results card, `title()` and `finish()` to end early.
+Each one is documented at the top of `js/games/arcade.js`.
 
 ## Adding a room
 
@@ -126,6 +164,6 @@ are generated from the same `head`, so there's no second drawing to maintain.
 
 ## Tuning the economy
 
-In `js/minigame.js`: `DURATION` (run length), `BAD_PENALTY`, `MAX_MULT`, and each type's
-`value` / `weight` in `TYPES`. A strong 40-second run currently earns roughly 400–500 coins;
-unlocking all 40 stickers and all 5 rooms costs about 3,800.
+Each game keeps its own constants at the top of its file — run length, penalties, multiplier
+caps and per-item values. A strong run earns roughly 300–500 coins; unlocking all 40 stickers
+and all 5 rooms costs about 3,800.

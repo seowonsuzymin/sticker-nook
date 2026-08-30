@@ -68,44 +68,44 @@
 
 </div>
 
-<!-- ── Mini-game overlay ──────────────────────────────────────── -->
-<div class="overlay catch-overlay" id="catchOverlay" hidden>
-  <div class="catch-frame">
-    <div class="catch-hud">
-      <div class="catch-stat">
-        <span class="catch-stat-label">Time</span>
-        <span class="catch-stat-value" id="catchTime">40</span>
+<!-- ── Arcade overlay (shared by every mini-game) ─────────────── -->
+<div class="overlay arcade-overlay" id="arcadeOverlay" hidden>
+  <div class="arcade-frame">
+    <div class="arcade-hud">
+      <div class="arc-stat">
+        <span class="arc-stat-label">Time</span>
+        <span class="arc-stat-value" id="arcTime">40</span>
       </div>
-      <div class="catch-stat catch-stat-coins">
-        <span class="catch-stat-label">Earned</span>
-        <span class="catch-stat-value" id="catchCoins">0</span>
+      <div class="arc-stat arc-stat-coins">
+        <span class="arc-stat-label">Earned</span>
+        <span class="arc-stat-value" id="arcCoins">0</span>
       </div>
-      <div class="catch-stat">
-        <span class="catch-stat-label">Combo</span>
-        <span class="catch-stat-value" id="catchCombo">x1</span>
+      <div class="arc-stat">
+        <span class="arc-stat-label" id="arcMeterLabel">Combo</span>
+        <span class="arc-stat-value" id="arcMeter">x1</span>
       </div>
-      <button class="btn btn-icon catch-quit" id="catchQuit" title="Quit">✕</button>
+      <button class="btn btn-icon arcade-quit" id="arcQuit" title="Quit">✕</button>
     </div>
-    <div class="catch-timebar"><div class="catch-timebar-fill" id="catchTimebar"></div></div>
-    <div class="catch-field" id="catchField"></div>
+    <div class="arcade-timebar"><div class="arcade-timebar-fill" id="arcTimebar"></div></div>
+    <div class="arcade-field" id="arcField"></div>
 
-    <!-- countdown -->
-    <div class="catch-countdown" id="catchCountdown" hidden><span>3</span></div>
+    <!-- countdown, announcing which game came up -->
+    <div class="arcade-countdown" id="arcCountdown" hidden>
+      <div class="ac-name" id="arcName"></div>
+      <div class="ac-tag" id="arcTag"></div>
+      <div class="ac-num" id="arcNum">3</div>
+    </div>
 
     <!-- results -->
-    <div class="catch-results" id="catchResults" hidden>
+    <div class="arcade-results" id="arcResults" hidden>
       <div class="results-card">
         <div class="results-burst">✧</div>
-        <h2>Nice catching!</h2>
+        <h2 id="arcResultTitle">Nice work!</h2>
         <div class="results-coins">
           <span class="coin-icon"></span>
-          <span id="resultCoins">0</span>
+          <span id="arcResultCoins">0</span>
         </div>
-        <div class="results-rows">
-          <div><span>Items caught</span><b id="resultCaught">0</b></div>
-          <div><span>Best combo</span><b id="resultCombo">0</b></div>
-          <div><span>Oops! blobs</span><b id="resultBad">0</b></div>
-        </div>
+        <div class="results-rows" id="arcResultRows"></div>
         <div class="results-actions">
           <button class="btn btn-ghost" id="btnCollect">Collect</button>
           <button class="btn btn-play" id="btnAgain">Play again</button>
@@ -177,7 +177,10 @@
 <script src="js/art.js"></script>
 <script src="js/room.js"></script>
 <script src="js/tray.js"></script>
-<script src="js/minigame.js"></script>
+<script src="js/games/arcade.js"></script>
+<script src="js/games/catch.js"></script>
+<script src="js/games/memory.js"></script>
+<script src="js/games/peekaboo.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/profile-screen.js"></script>
 <script src="js/main.js"></script>

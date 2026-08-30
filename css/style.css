@@ -448,7 +448,7 @@ body.is-dragging { cursor: grabbing; user-select: none; }
 
 /* ── Mini-game ───────────────────────────────────────────── */
 
-.catch-frame {
+.arcade-frame {
   position: relative;
   width: min(560px, 96vw);
   height: min(900px, 94dvh);
@@ -460,23 +460,23 @@ body.is-dragging { cursor: grabbing; user-select: none; }
   overflow: hidden;
 }
 
-.catch-hud {
+.arcade-hud {
   display: flex; align-items: center; gap: 10px;
   padding: 10px 12px;
   background: rgba(255, 255, 255, .8);
   border-bottom: 3px solid var(--ink);
   flex: none;
 }
-.catch-stat {
+.arc-stat {
   flex: 1;
   display: flex; flex-direction: column; align-items: center;
   line-height: 1.05;
 }
-.catch-stat-label { font-size: 10.5px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .6px; }
-.catch-stat-value { font-size: 23px; font-weight: 700; }
-.catch-stat-coins .catch-stat-value { color: var(--gold-deep); }
-#catchCombo.is-hot { color: var(--pink-deep); animation: combo-pulse .6s ease-in-out infinite; }
-#catchCombo.is-broken { animation: combo-break .3s ease; }
+.arc-stat-label { font-size: 10.5px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .6px; }
+.arc-stat-value { font-size: 23px; font-weight: 700; }
+.arc-stat-coins .arc-stat-value { color: var(--gold-deep); }
+#arcMeter.is-hot { color: var(--pink-deep); animation: combo-pulse .6s ease-in-out infinite; }
+#arcMeter.is-broken { animation: combo-break .3s ease; }
 @keyframes combo-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.13); } }
 @keyframes combo-break {
   0% { transform: translateX(0); color: var(--danger); }
@@ -484,22 +484,22 @@ body.is-dragging { cursor: grabbing; user-select: none; }
   75% { transform: translateX(5px); }
   100% { transform: translateX(0); }
 }
-.catch-quit { flex: none; width: 34px; height: 34px; font-size: 15px; }
+.arcade-quit { flex: none; width: 34px; height: 34px; font-size: 15px; }
 
-.catch-timebar { height: 8px; background: #ffe0ec; flex: none; border-bottom: 3px solid var(--ink); }
-.catch-timebar-fill {
+.arcade-timebar { height: 8px; background: #ffe0ec; flex: none; border-bottom: 3px solid var(--ink); }
+.arcade-timebar-fill {
   height: 100%; width: 100%;
   background: linear-gradient(90deg, var(--mint), var(--gold) 70%, var(--pink));
   transition: width .1s linear;
 }
 
-.catch-field {
+.arcade-field {
   position: relative;
   flex: 1 1 auto;
   overflow: hidden;
   touch-action: none;
 }
-.catch-field.is-shaking { animation: shake .3s ease; }
+.arcade-field.is-shaking { animation: shake .3s ease; }
 @keyframes shake {
   0%, 100% { transform: translate(0, 0); }
   20% { transform: translate(-7px, 3px); }
@@ -538,31 +538,175 @@ body.is-dragging { cursor: grabbing; user-select: none; }
   100% { opacity: 0; transform: translate(-50%, -160%) scale(1); }
 }
 
-.catch-countdown {
+.arcade-countdown {
   position: absolute; inset: 0;
-  display: grid; place-items: center;
-  background: rgba(255, 255, 255, .55);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 2px;
+  background: rgba(255, 255, 255, .72);
   z-index: 5;
+  padding: 20px;
+  text-align: center;
 }
-.catch-countdown span {
-  font-size: 92px; font-weight: 700; color: var(--pink-deep);
+.ac-name {
+  font-size: 27px; font-weight: 700;
+  color: var(--ink);
+  animation: card-in .4s cubic-bezier(.3, 1.5, .5, 1);
+}
+.ac-tag {
+  font-size: 14px; color: var(--ink-soft);
+  margin-bottom: 10px;
+  max-width: 300px;
+  animation: card-in .5s cubic-bezier(.3, 1.5, .5, 1);
+}
+.ac-num {
+  font-size: 88px; font-weight: 700; color: var(--pink-deep);
   text-shadow: 0 4px 0 #fff;
+  line-height: 1.05;
   animation: count-in .7s ease-out;
 }
-.catch-countdown .go { font-size: 62px; color: var(--mint); }
+.ac-num.go { font-size: 60px; color: var(--mint); }
 @keyframes count-in {
   0% { transform: scale(2.1); opacity: 0; }
   40% { transform: scale(1); opacity: 1; }
   100% { transform: scale(1); opacity: 1; }
 }
 
-.catch-results {
+.arcade-results {
   position: absolute; inset: 0;
   display: grid; place-items: center;
   background: rgba(60, 40, 66, .45);
   backdrop-filter: blur(3px);
   z-index: 10;
   padding: 16px;
+}
+
+/* ── Boards (shared by the grid-based games) ─────────────── */
+
+/* Centres the largest square that fits, so cells stay square in a
+   field that is much taller than it is wide. */
+.board-wrap {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  padding: 14px;
+}
+.board-wrap > * {
+  width: 100%;
+  aspect-ratio: 1;
+  max-height: 100%;
+}
+
+/* ── Memory Match ────────────────────────────────────────── */
+
+.mm-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+  gap: 9px;
+}
+
+.mm-card {
+  position: relative;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  min-height: 0;
+}
+.mm-inner { position: absolute; inset: 0; }
+
+/* A cross-fade rather than a 3D rotateY: backface-visibility combined with
+   overflow:hidden is unreliable, and this reads just as clearly. */
+.mm-back, .mm-face {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  border: 3px solid var(--ink);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  transition: opacity .15s ease, transform .26s cubic-bezier(.3, 1.4, .5, 1);
+}
+.mm-back {
+  background: linear-gradient(160deg, #ffc2d8, var(--pink) 60%, #f79ec0);
+  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, .55);
+}
+.mm-back-mark { font-size: 24px; color: #fff; opacity: .9; }
+.mm-face {
+  background: var(--card);
+  padding: 8%;
+  opacity: 0;
+  transform: scale(.8) rotate(-7deg);
+}
+.mm-face svg { width: 100%; height: 100%; display: block; }
+
+.mm-card.is-up .mm-face { opacity: 1; transform: none; }
+.mm-card.is-up .mm-back { opacity: 0; transform: scale(.92); }
+
+.mm-card.is-matched { cursor: default; }
+.mm-card.is-matched .mm-face {
+  background: #e6f8ef;
+  border-color: #5fb87a;
+  animation: mm-pop .34s cubic-bezier(.3, 1.6, .5, 1);
+}
+@keyframes mm-pop {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.13); }
+  100% { transform: scale(1); }
+}
+
+/* ── Peek-a-Boo ──────────────────────────────────────────── */
+
+.pk-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.pk-hole {
+  position: relative;
+  display: grid;
+  place-items: end center;
+  overflow: hidden;
+  min-height: 0;
+}
+.pk-mound {
+  position: absolute;
+  left: 4%; right: 4%; bottom: 6%;
+  height: 34%;
+  border: 3px solid var(--ink);
+  border-radius: 50% 50% 44% 44%;
+  background: linear-gradient(180deg, #e8dcc8, #d8c6ab);
+  box-shadow: inset 0 5px 0 rgba(0, 0, 0, .12);
+  z-index: 2;
+}
+.pk-critter {
+  position: absolute;
+  left: 16%; right: 16%; bottom: 16%;
+  aspect-ratio: 1;
+  z-index: 1;
+  transform: translateY(64%) scale(.85);
+  opacity: 0;
+  /* Slowed roughly 2x from the original snappy timing so the pop
+     reads clearly instead of flickering. */
+  transition: transform .32s ease-out, opacity .24s linear;
+  cursor: pointer;
+  touch-action: none;
+}
+.pk-hole.is-up .pk-critter {
+  transform: translateY(-14%) scale(1);
+  opacity: 1;
+}
+.pk-critter svg {
+  width: 100%; height: 100%; display: block;
+  pointer-events: none;
+  filter: drop-shadow(0 3px 3px rgba(74, 59, 82, .22));
+}
+.pk-critter.is-rare svg { filter: drop-shadow(0 0 9px rgba(255, 207, 77, .95)); }
+
+.pk-hole.is-bopped .pk-critter { animation: pk-bop .22s ease-out; }
+@keyframes pk-bop {
+  0% { transform: translateY(-14%) scale(1); }
+  100% { transform: translateY(40%) scale(.7); opacity: 0; }
 }
 
 /* ── Cards / modals ──────────────────────────────────────── */

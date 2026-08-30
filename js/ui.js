@@ -97,10 +97,10 @@
         art: '<div class="modal-room">' + SN.roomSwatch(r) + '</div>',
         title: r.name + ' is locked',
         body: 'This room unlocks for ' + coin(r.price) + '. You have ' + coin(SN.state.coins) +
-          ' — play <b>Sticker Catch</b> to make up the difference.',
+          ' — play a mini-game to make up the difference.',
         actions: [
           { label: 'Maybe later', ghost: true },
-          { label: 'Earn coins', primary: true, onClick: function () { SN.Catch.open(); } }
+          { label: 'Earn coins', primary: true, onClick: function () { SN.Arcade.openRandom(); } }
         ]
       });
       return;

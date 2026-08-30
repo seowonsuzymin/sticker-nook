@@ -101,10 +101,10 @@
         art: SN.stickerSVG(id),
         title: 'Not quite yet!',
         body: '<b>' + s.name + '</b> costs ' + coin(s.price) + '. You need ' +
-          coin(short) + ' more — play <b>Sticker Catch</b> to earn them.',
+          coin(short) + ' more — play a mini-game to earn them.',
         actions: [
           { label: 'Maybe later', ghost: true },
-          { label: 'Earn coins', primary: true, onClick: function () { SN.Catch.open(); } }
+          { label: 'Earn coins', primary: true, onClick: function () { SN.Arcade.openRandom(); } }
         ]
       });
       return;
