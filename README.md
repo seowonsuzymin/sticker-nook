@@ -21,8 +21,9 @@ you're currently in. Deleting a nook from the picker removes just that slot's sa
 
 ## The loop
 
-1. Drag stickers from the tray into the isometric room. Drag to move, corner handles to
-   resize / rotate / flip, ✕ to delete. `Delete` and `Esc` work on the selected sticker too.
+1. Pick a room from the hex grid, then decorate it: drag stickers from the tray into the
+   isometric room, corner handles to resize / rotate / flip, ✕ to delete. `Delete` and `Esc`
+   work on the selected sticker too. The ← button goes back to the grid.
 2. Most stickers and rooms are locked behind coins.
 3. Coins come only from the mini-games. **"Earn Coins" deals you one at random** (never the
    same one twice in a row) — see below.
@@ -48,7 +49,8 @@ js/
   games/catch.js      Sticker Catch              ← add mini-games alongside these
   games/memory.js     Memory Match
   games/peekaboo.js   Peek-a-Boo
-  ui.js               coin HUD, room switcher, modals, toasts, settings
+  room-select.js      the hex grid of rooms + its fixed top bar
+  ui.js               coin HUD, room buy flows, modals, toasts, settings
   profile-screen.js   the "choose your nook" picker
   main.js             boot + profile switching
 ```
@@ -83,6 +85,26 @@ the tray, categories, save file and shop all pick it up automatically.
 inherited from the wrapper, so shapes only need a `fill` — use `stroke="none"` on small
 details you don't want outlined, and `fill="none"` on open paths. `C` is the shared pastel
 palette defined at the top of the file; sticking to it keeps everything looking like one set.
+
+## The room grid
+
+After choosing a nook you land on the room-select screen: a fixed top bar (home / coins /
+settings) over a vertically scrolling honeycomb of rooms.
+
+- **Locked rooms** are a flat hexagon in the room's own accent colour, with a lock and a
+  `LEVEL N` label. Tap one to buy it.
+- **Unlocked rooms** render a miniature of the real thing — the same two walls and floor,
+  with the furniture you've actually placed in it — plus a round pencil button on the bottom
+  edge that opens the room for decorating.
+- The last tile is a dashed **NEW ROOM** hex: 1000 coins for a blank room, rising 500 each
+  time (1000, 1500, 2000, …).
+- The coin pill in the top bar is tappable — it deals you a random mini-game.
+
+Tiles are pointy-top hexagons squashed to 0.7 of their width so they read as tilted into the
+isometric view, laid out as rows of 3 with rows of 2 tucked between them (so the 5 presets
+make one tidy block). `LEVEL N` is just the room's position in `state.roomOrder`.
+`SN.hexRoom()` in `art.js` draws a tile; unlocked ones reuse the real room geometry, clipped
+to the hexagon.
 
 ## The mini-games
 
@@ -132,6 +154,10 @@ Append one entry to `ROOMS` in `js/data/rooms.js`:
   skirting: '#fffaf6', accent: '#ff9f7a', mood: 'day'          // day|night
 }
 ```
+
+Player-added blank rooms are separate from this catalog — they're created at purchase time
+and saved on the profile itself (`state.customRooms`), and `SN.roomDef(id)` resolves either
+kind to the theme object the renderer needs.
 
 Existing saves are migrated forward on load, so new stickers and rooms appear for players
 already mid-game without wiping their progress.

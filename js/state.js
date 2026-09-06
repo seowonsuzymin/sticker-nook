@@ -11,6 +11,8 @@
   'use strict';
 
   var STARTING_COINS = 50;
+  var CUSTOM_ROOM_BASE_PRICE = 1000;
+  var CUSTOM_ROOM_PRICE_STEP = 500;
 
   /** localStorage key for the profile currently being played. */
   function saveKey() { return SN.Profiles.saveKey(); }
@@ -32,6 +34,11 @@
       activeRoom: unlocked[0] || SN.ROOMS[0].id,
       layouts: layouts,
       nextUid: 1,
+      // Rooms the player added, keyed by id: { name, price }. The presets
+      // above aren't listed here.
+      customRooms: {},
+      // The order rooms appear on the level grid — this is what "LEVEL N" counts.
+      roomOrder: SN.ROOMS.map(function (r) { return r.id; }),
       stats: { plays: 0, bestRun: 0, bestCombo: 0, totalEarned: 0 }
     };
   }
@@ -53,18 +60,41 @@
         if (SN.STICKER_BY_ID[id] && base.owned.indexOf(id) === -1) base.owned.push(id);
       });
     }
-    if (Array.isArray(raw.unlockedRooms)) {
-      raw.unlockedRooms.forEach(function (id) {
-        if (SN.ROOM_BY_ID[id] && base.unlockedRooms.indexOf(id) === -1) base.unlockedRooms.push(id);
+    // Player-added rooms first, so everything below can ask "is this a real room?"
+    base.customRooms = {};
+    if (raw.customRooms && typeof raw.customRooms === 'object') {
+      Object.keys(raw.customRooms).forEach(function (id) {
+        var c = raw.customRooms[id];
+        if (!c || typeof c !== 'object' || SN.ROOM_BY_ID[id]) return;   // never shadow a preset
+        base.customRooms[id] = {
+          name: String(c.name || 'New Room').slice(0, 24),
+          price: Math.max(0, Math.floor(num(c.price, CUSTOM_ROOM_BASE_PRICE)))
+        };
+        base.layouts[id] = [];
       });
     }
+    function isKnownRoom(id) { return !!SN.ROOM_BY_ID[id] || !!base.customRooms[id]; }
+
+    if (Array.isArray(raw.unlockedRooms)) {
+      raw.unlockedRooms.forEach(function (id) {
+        if (isKnownRoom(id) && base.unlockedRooms.indexOf(id) === -1) base.unlockedRooms.push(id);
+      });
+    }
+
+    // Level order: keep what was saved, drop anything gone, append anything new.
+    var order = Array.isArray(raw.roomOrder) ? raw.roomOrder.filter(isKnownRoom) : [];
+    var seen = {};
+    order.forEach(function (id) { seen[id] = true; });
+    SN.ROOMS.map(function (r) { return r.id; }).concat(Object.keys(base.customRooms))
+      .forEach(function (id) { if (!seen[id]) { order.push(id); seen[id] = true; } });
+    base.roomOrder = order;
     if (base.unlockedRooms.indexOf(raw.activeRoom) !== -1) base.activeRoom = raw.activeRoom;
 
     // Layouts: keep only stickers/rooms that still exist in the catalog.
     var maxUid = 0;
     if (raw.layouts && typeof raw.layouts === 'object') {
       Object.keys(raw.layouts).forEach(function (roomId) {
-        if (!SN.ROOM_BY_ID[roomId] || !Array.isArray(raw.layouts[roomId])) return;
+        if (!isKnownRoom(roomId) || !Array.isArray(raw.layouts[roomId])) return;
         base.layouts[roomId] = raw.layouts[roomId]
           .filter(function (p) { return p && SN.STICKER_BY_ID[p.id]; })
           .map(function (p, i) {
@@ -156,6 +186,37 @@
   SN.owns = function (stickerId) { return SN.state.owned.indexOf(stickerId) !== -1; };
   SN.roomUnlocked = function (roomId) { return SN.state.unlockedRooms.indexOf(roomId) !== -1; };
   SN.currentLayout = function () { return SN.state.layouts[SN.state.activeRoom]; };
+
+  /**
+   * Resolves any room id — preset or player-added — to a theme object with
+   * the fields the renderer needs. Null for an id that doesn't exist.
+   */
+  SN.roomDef = function (roomId) {
+    if (SN.ROOM_BY_ID[roomId]) return SN.ROOM_BY_ID[roomId];
+    var c = SN.state.customRooms[roomId];
+    if (!c) return null;
+    return Object.assign({}, SN.BLANK_ROOM_THEME, { id: roomId, name: c.name, price: c.price });
+  };
+
+  /** What the next player-added room costs. */
+  SN.customRoomPrice = function () {
+    return CUSTOM_ROOM_BASE_PRICE +
+      CUSTOM_ROOM_PRICE_STEP * Object.keys(SN.state.customRooms).length;
+  };
+
+  /** Adds a blank room to the end of the grid. Caller spends the coins. */
+  SN.addCustomRoom = function () {
+    var id = 'room-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    var name = 'New Room ' + (Object.keys(SN.state.customRooms).length + 1);
+
+    SN.state.customRooms[id] = { name: name, price: SN.customRoomPrice() };
+    SN.state.layouts[id] = [];
+    SN.state.unlockedRooms.push(id);
+    SN.state.roomOrder.push(id);
+    SN.state.activeRoom = id;
+    SN.save();
+    return id;
+  };
 
   SN.addCoins = function (n) {
     SN.state.coins = Math.max(0, SN.state.coins + n);

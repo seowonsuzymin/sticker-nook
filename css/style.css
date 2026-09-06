@@ -146,64 +146,147 @@ body.is-dragging { cursor: grabbing; user-select: none; }
 }
 .hud-right { display: flex; align-items: center; gap: 9px; }
 
-/* ── Room tabs ───────────────────────────────────────────── */
+/* ── Room select: fixed bar + scrolling honeycomb ────────── */
 
-.room-tabs {
-  display: flex; gap: 8px;
-  overflow-x: auto;
-  padding: 2px 2px 6px;
-  flex: none;
-  scrollbar-width: thin;
+.room-select {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+  z-index: 350;
 }
-.room-tabs::-webkit-scrollbar { height: 5px; }
-.room-tabs::-webkit-scrollbar-thumb { background: #e6d6e2; border-radius: 99px; }
 
-.room-tab {
-  flex: 0 0 auto;
-  display: flex; align-items: center; gap: 8px;
-  font: inherit; font-weight: 700;
-  padding: 6px 14px 6px 7px;
-  border: 2px solid var(--ink);
-  border-radius: 999px;
-  background: var(--card);
-  color: var(--ink);
+.rs-bar {
+  flex: none;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, .86);
+  backdrop-filter: blur(8px);
+  border-bottom: 3px solid var(--ink);
+  box-shadow: 0 4px 14px rgba(120, 80, 110, .12);
+}
+
+.rs-coin {
   cursor: pointer;
-  box-shadow: 0 3px 0 rgba(74, 59, 82, .18);
-  transition: transform .12s ease, background .15s ease;
+  gap: 7px;
+  font: inherit;
+  transition: transform .12s ease;
 }
-.room-tab:hover { transform: translateY(-1px); }
-.room-tab.is-active {
-  background: color-mix(in srgb, var(--accent) 26%, #fff);
-  box-shadow: 0 3px 0 var(--ink);
-}
-.room-tab.is-locked { opacity: .78; }
-.room-tab.is-locked .room-tab-swatch svg { filter: grayscale(.75); }
-.room-tab.is-affordable {
-  opacity: 1;
-  animation: tab-glow 2.2s ease-in-out infinite;
-}
-@keyframes tab-glow {
-  0%, 100% { box-shadow: 0 3px 0 rgba(74, 59, 82, .18); }
-  50% { box-shadow: 0 3px 0 rgba(74, 59, 82, .18), 0 0 0 5px rgba(255, 207, 77, .35); }
+.rs-coin:hover { transform: translateY(-1px); }
+.rs-coin-plus {
+  width: 20px; height: 20px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #ffa8c4, var(--pink));
+  border: 2px solid var(--ink);
+  color: #fff; font-size: 13px; font-weight: 700; line-height: 1;
 }
 
-.room-tab-swatch {
+.rs-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 26px 12px 40px;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Honeycomb: rows of 3 with rows of 2 tucked between, overlapping by a
+   quarter tile so the hexes interlock. */
+.hex-grid {
+  --hw: clamp(120px, 30vw, 208px);
+  --hh: calc(var(--hw) * 0.7);
   position: relative;
-  width: 40px; height: 34px;
-  display: grid; place-items: center;
-  flex: none;
+  width: calc(var(--hw) * 3);
+  height: calc(var(--rows, 1) * var(--hh) * 0.75 + var(--hh) * 0.25 + 26px);
+  margin: 0 auto;
 }
-.room-tab-swatch svg { width: 40px; height: 34px; }
-.room-tab-lock {
-  position: absolute; inset: 0;
-  display: grid; place-items: center;
-  font-size: 15px;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .35));
+
+.hex {
+  position: absolute;
+  width: var(--hw);
+  height: var(--hh);
+  left: calc(var(--col) * var(--hw) + var(--off) * var(--hw) / 2);
+  top: calc(var(--row) * var(--hh) * 0.75);
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  /* Earlier rows paint above later ones so the decorate button, which hangs
+     over the row below, is never buried by it. */
+  z-index: calc(50 - var(--row));
+  transition: transform .14s ease, filter .14s ease;
 }
-.room-tab-text { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15; }
-.room-tab-text b { font-size: 14px; }
-.room-tab-text small { font-size: 11px; color: var(--ink-soft); font-weight: 600; }
-.room-tab-price { display: inline-flex; align-items: center; gap: 3px; }
+.hex:hover { transform: translateY(-3px); filter: drop-shadow(0 6px 10px rgba(120, 80, 110, .22)); z-index: 60; }
+.hex:active { transform: translateY(0); }
+
+.hex-svg { width: 100%; height: 100%; display: block; overflow: visible; }
+
+.hex-name {
+  position: absolute;
+  left: 50%; top: 16%;
+  transform: translateX(-50%);
+  max-width: 76%;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .92);
+  border: 2px solid var(--ink);
+  font-size: 10.5px; font-weight: 700; line-height: 1.3;
+  color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+.hex-lock {
+  position: absolute;
+  left: 50%; top: 34%;
+  transform: translate(-50%, -50%);
+  font-size: clamp(20px, 5vw, 30px);
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .3));
+  pointer-events: none;
+}
+.hex-level {
+  position: absolute;
+  left: 50%; top: 60%;
+  transform: translateX(-50%);
+  font-size: clamp(9px, 2.2vw, 12px);
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  color: #fff;
+  text-shadow: 0 2px 0 rgba(74, 59, 82, .55);
+  pointer-events: none;
+  white-space: nowrap;
+}
+.hex-level.is-add { color: var(--ink-soft); text-shadow: none; top: 62%; }
+
+/* The round decorate button, hanging off the bottom edge. */
+.hex-go {
+  position: absolute;
+  left: 50%; bottom: 0;
+  transform: translate(-50%, 34%);
+  width: 34px; height: 34px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  border: 3px solid var(--ink);
+  background: linear-gradient(180deg, #ffa8c4, var(--pink));
+  color: #fff;
+  font-size: 15px; line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 3px 0 rgba(74, 59, 82, .3);
+  transition: transform .12s ease;
+  z-index: 2;
+}
+.hex-go:hover { transform: translate(-50%, 34%) scale(1.1); }
+.hex-go svg { width: 17px; height: 17px; display: block; }
+
+.hex.is-add .hex-plus {
+  position: absolute;
+  left: 50%; top: 38%;
+  transform: translate(-50%, -50%);
+  font-size: clamp(22px, 5vw, 32px);
+  font-weight: 700;
+  color: var(--ink-soft);
+  pointer-events: none;
+}
 
 /* ── Stage ───────────────────────────────────────────────── */
 

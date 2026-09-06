@@ -24,13 +24,29 @@
   </div>
 </div>
 
+<!-- ── Room select: fixed top bar over a scrolling hex grid ───── -->
+<div class="room-select" id="roomSelect" hidden>
+  <header class="rs-bar">
+    <button class="btn btn-icon" id="rsHome" title="Switch nook" aria-label="Switch nook">⌂</button>
+    <button class="coin-pill rs-coin" id="rsCoinPill" title="Play a mini-game to earn coins">
+      <span class="coin-icon"></span>
+      <span class="coin-amount" id="rsCoins">0</span>
+      <span class="rs-coin-plus">+</span>
+    </button>
+    <button class="btn btn-icon" id="rsSettings" title="Settings" aria-label="Settings">⚙</button>
+  </header>
+  <div class="rs-scroll">
+    <div class="hex-grid" id="hexGrid"></div>
+  </div>
+</div>
+
 <div id="app" hidden>
 
   <!-- ── Header / HUD ─────────────────────────────────────────── -->
   <header class="hud">
     <div class="hud-brand">
-      <span class="hud-logo">✿</span>
-      <h1>Sticker Nook</h1>
+      <button class="btn btn-icon" id="btnBackToRooms" title="Back to your rooms" aria-label="Back to your rooms">←</button>
+      <h1 id="roomTitle">Room</h1>
     </div>
 
     <div class="hud-right">
@@ -44,9 +60,6 @@
       <button class="btn btn-icon" id="btnSettings" title="Settings">⚙</button>
     </div>
   </header>
-
-  <!-- ── Room tabs ────────────────────────────────────────────── -->
-  <nav class="room-tabs" id="roomTabs"></nav>
 
   <!-- ── Stage ────────────────────────────────────────────────── -->
   <main class="stage-wrap">
@@ -181,6 +194,7 @@
 <script src="js/games/catch.js"></script>
 <script src="js/games/memory.js"></script>
 <script src="js/games/peekaboo.js"></script>
+<script src="js/room-select.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/profile-screen.js"></script>
 <script src="js/main.js"></script>

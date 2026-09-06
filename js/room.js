@@ -49,7 +49,7 @@
   /* ── Rendering ─────────────────────────────────────────── */
 
   Room.render = function () {
-    var theme = SN.ROOM_BY_ID[SN.state.activeRoom];
+    var theme = SN.roomDef(SN.state.activeRoom);
     roomLayer.innerHTML = SN.buildRoom(theme);
     stage.dataset.mood = theme.mood;
 

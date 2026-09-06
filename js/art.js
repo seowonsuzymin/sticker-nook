@@ -42,6 +42,8 @@
   function floorPattern(theme) {
     var out = '', i, j, n;
 
+    if (theme.floorPattern === 'plain') return '';
+
     if (theme.floorPattern === 'checker') {
       n = 6;
       for (i = 0; i < n; i++) {
@@ -235,6 +237,89 @@
       character(theme) +
       '</svg>';
   };
+
+  /* ── Hex tiles for the room-select grid ────────────────── */
+
+  /* A pointy-top hexagon, deliberately squashed (height < the 1.155x a
+     regular hex would need) so it reads as a tile tilted away from you. */
+  var HEX_W = 200, HEX_H = 140;
+  SN.HEX_W = HEX_W;
+  SN.HEX_H = HEX_H;
+
+  function hexPoints() {
+    return '100,0 200,35 200,105 100,140 0,105 0,35';
+  }
+
+  /**
+   * One tile on the room-select grid.
+   *   locked  → the room's accent colour, flat, for a lock + LEVEL label
+   *   unlocked→ a miniature of the real room, furniture and all
+   */
+  SN.hexRoom = function (theme, layout, locked) {
+    var uid = 'hex-' + theme.id;
+    var inner = locked ? lockedFill(theme) : dioramaFill(theme, layout || [], uid);
+
+    return '<svg class="hex-svg" viewBox="0 0 ' + HEX_W + ' ' + HEX_H + '" aria-hidden="true">' +
+      '<defs><clipPath id="clip-' + uid + '">' +
+      '<polygon points="' + hexPoints() + '"/></clipPath></defs>' +
+      '<g clip-path="url(#clip-' + uid + ')">' + inner + '</g>' +
+      '<polygon points="' + hexPoints() + '" fill="none" stroke="' + INK + '" stroke-width="6" ' +
+      'stroke-linejoin="round"/>' +
+      '</svg>';
+  };
+
+  function lockedFill(theme) {
+    return '<polygon points="' + hexPoints() + '" fill="' + theme.accent + '"/>' +
+      '<polygon points="' + hexPoints() + '" fill="#000" opacity=".12"/>';
+  }
+
+  /**
+   * The room shrunk into the tile: the same two walls and floor as the real
+   * thing, with the player's own furniture sitting in it.
+   */
+  function dioramaFill(theme, layout, uid) {
+    var g = GEO;
+    // Frame the interesting band — lower walls through the front of the floor.
+    var vx = 40, vy = 120, vw = 920, vh = 600;
+    var s = Math.max(HEX_W / vw, HEX_H / vh);
+    var tx = -vx * s + (HEX_W - vw * s) / 2;
+    var ty = -vy * s + (HEX_H - vh * s) / 2;
+
+    var leftWall = pts(g.CT, g.C, g.L, g.LT);
+    var rightWall = pts(g.CT, g.C, g.R, g.RT);
+    var floor = pts(g.C, g.L, g.B, g.R);
+    var wp = wallPatternDef(theme, 'wpx-' + uid);
+
+    var furniture = layout.slice()
+      .sort(function (a, b) { return a.z - b.z; })
+      .map(function (p) {
+        var size = p.size * g.W;
+        var cx = p.x * g.W, cy = p.y * g.H;
+        var art = SN.stickerSVG(p.id).replace('<svg ',
+          '<svg x="' + (cx - size / 2) + '" y="' + (cy - size / 2) + '" ' +
+          'width="' + size + '" height="' + size + '" ');
+        var t = 'rotate(' + p.rot + ' ' + cx + ' ' + cy + ')' +
+          (p.flip ? ' translate(' + (2 * cx) + ' 0) scale(-1 1)' : '');
+        return '<g transform="' + t + '">' + art + '</g>';
+      }).join('');
+
+    return '<g transform="translate(' + tx.toFixed(2) + ' ' + ty.toFixed(2) + ') scale(' + s.toFixed(4) + ')" ' +
+      'stroke="' + INK + '" stroke-width="4" stroke-linejoin="round" fill="none">' +
+      '<defs>' + wp.def + '</defs>' +
+      '<polygon points="' + leftWall + '" fill="' + theme.wall + '" stroke="none"/>' +
+      '<polygon points="' + rightWall + '" fill="' + theme.wall + '" stroke="none"/>' +
+      (wp.fill ? '<polygon points="' + leftWall + '" fill="' + wp.fill + '" stroke="none" opacity=".9"/>' +
+        '<polygon points="' + rightWall + '" fill="' + wp.fill + '" stroke="none" opacity=".9"/>' : '') +
+      '<polygon points="' + leftWall + '" fill="#000" opacity=".08" stroke="none"/>' +
+      '<polygon points="' + floor + '" fill="' + theme.floor + '" stroke="none"/>' +
+      '<g clip-path="url(#fclip-' + uid + ')">' + floorPattern(theme) + '</g>' +
+      '<defs><clipPath id="fclip-' + uid + '"><polygon points="' + floor + '"/></clipPath></defs>' +
+      '<polygon points="' + leftWall + '"/>' +
+      '<polygon points="' + rightWall + '"/>' +
+      '<polygon points="' + floor + '"/>' +
+      furniture +
+      '</g>';
+  }
 
   /**
    * Portrait of a character in a profile's outfit colour, for the save-slot

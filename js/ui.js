@@ -6,22 +6,23 @@
 
   var UI = SN.UI = {};
 
-  var coinAmount, coinPill, tabsEl, modalOverlay, modalEl, settingsOverlay, toastStack;
+  var coinAmount, coinPill, modalOverlay, modalEl, settingsOverlay, toastStack;
 
   UI.init = function () {
     coinAmount = document.getElementById('coinAmount');
     coinPill = document.getElementById('coinPill');
-    tabsEl = document.getElementById('roomTabs');
     modalOverlay = document.getElementById('modalOverlay');
     modalEl = document.getElementById('modal');
     settingsOverlay = document.getElementById('settingsOverlay');
     toastStack = document.getElementById('toastStack');
 
     UI.renderCoins();
-    UI.renderTabs();
 
-    SN.on('coins', function () { UI.renderCoins(true); UI.renderTabs(); });
-    SN.on('layout', UI.renderTabs);
+    SN.on('coins', function () { UI.renderCoins(true); });
+
+    document.getElementById('btnBackToRooms').addEventListener('click', function () {
+      SN.RoomSelect.show();
+    });
 
     // Dismiss the modal by clicking the backdrop.
     modalOverlay.addEventListener('pointerdown', function (e) {
@@ -53,44 +54,16 @@
 
   /* ── Room switcher ─────────────────────────────────────── */
 
-  UI.renderTabs = function () {
-    if (!SN.state) return;                 // still on the profile picker
-    tabsEl.innerHTML = SN.ROOMS.map(function (r) {
-      var unlocked = SN.roomUnlocked(r.id);
-      var active = SN.state.activeRoom === r.id;
-      var afford = SN.state.coins >= r.price;
-      return '<button class="room-tab' +
-        (active ? ' is-active' : '') +
-        (unlocked ? '' : ' is-locked') +
-        (!unlocked && afford ? ' is-affordable' : '') +
-        '" data-room="' + r.id + '" style="--accent:' + r.accent + '">' +
-        '<span class="room-tab-swatch">' + SN.roomSwatch(r) +
-        (unlocked ? '' : '<span class="room-tab-lock">🔒</span>') + '</span>' +
-        '<span class="room-tab-text">' +
-        '<b>' + r.name + '</b>' +
-        (unlocked
-          ? '<small>' + SN.state.layouts[r.id].length + ' stickers</small>'
-          : '<small class="room-tab-price"><span class="coin-icon coin-icon-sm"></span>' + r.price + '</small>') +
-        '</span></button>';
-    }).join('');
-
-    tabsEl.querySelectorAll('.room-tab').forEach(function (b) {
-      b.addEventListener('click', function () { pickRoom(b.dataset.room); });
-    });
+  /** The title in the decorate view's top bar. */
+  UI.renderRoomBar = function () {
+    var r = SN.roomDef(SN.state.activeRoom);
+    document.getElementById('roomTitle').textContent = r ? r.name : 'Room';
   };
 
-  function pickRoom(roomId) {
-    var r = SN.ROOM_BY_ID[roomId];
-    if (!r) return;
-
-    if (SN.roomUnlocked(roomId)) {
-      if (SN.state.activeRoom === roomId) return;
-      SN.state.activeRoom = roomId;
-      SN.save();
-      SN.Room.render();
-      UI.renderTabs();
-      return;
-    }
+  /** Tapping a locked tile on the room grid. */
+  UI.offerRoom = function (roomId) {
+    var r = SN.roomDef(roomId);
+    if (!r || SN.roomUnlocked(roomId)) return;
 
     if (SN.state.coins < r.price) {
       UI.modal({
@@ -115,17 +88,51 @@
         {
           label: 'Unlock', primary: true, onClick: function () {
             if (!SN.spendCoins(r.price)) return;
-            SN.state.unlockedRooms.push(r.id);
-            SN.state.activeRoom = r.id;
+            SN.state.unlockedRooms.push(roomId);
             SN.save();
-            SN.Room.render();
-            UI.renderTabs();
+            SN.RoomSelect.render();
             UI.toast('🏠 ' + r.name + ' unlocked!');
           }
         }
       ]
     });
-  }
+  };
+
+  /** Tapping the "new room" tile at the end of the grid. */
+  UI.offerNewRoom = function () {
+    var price = SN.customRoomPrice();
+
+    if (SN.state.coins < price) {
+      UI.modal({
+        title: 'Not quite yet!',
+        body: 'A new room costs ' + coin(price) + '. You have ' + coin(SN.state.coins) +
+          ' — play a mini-game to make up the difference.',
+        actions: [
+          { label: 'Maybe later', ghost: true },
+          { label: 'Earn coins', primary: true, onClick: function () { SN.Arcade.openRandom(); } }
+        ]
+      });
+      return;
+    }
+
+    UI.modal({
+      title: 'Add a new room?',
+      body: 'A brand new, empty room — plain walls, nothing placed — for ' + coin(price) +
+        '. You decide what goes in it.',
+      actions: [
+        { label: 'Cancel', ghost: true },
+        {
+          label: 'Add room', primary: true, onClick: function () {
+            if (!SN.spendCoins(price)) return;
+            var id = SN.addCustomRoom();
+            SN.RoomSelect.render();
+            UI.toast('🏠 New room added!');
+            SN.RoomSelect.enter(id);
+          }
+        }
+      ]
+    });
+  };
 
   /* ── Modal ─────────────────────────────────────────────── */
 
@@ -179,7 +186,7 @@
     });
 
     document.getElementById('btnClearRoom').addEventListener('click', function () {
-      var r = SN.ROOM_BY_ID[SN.state.activeRoom];
+      var r = SN.roomDef(SN.state.activeRoom);
       UI.closeSettings();
       UI.modal({
         title: 'Clear ' + r.name + '?',
@@ -189,7 +196,7 @@
           {
             label: 'Clear room', danger: true, onClick: function () {
               SN.Room.clearRoom();
-              UI.renderTabs();
+              SN.RoomSelect.render();
               UI.toast('🧹 Room cleared.');
             }
           }
@@ -211,8 +218,9 @@
               SN.resetProgress();
               SN.Room.render();
               UI.renderCoins();
-              UI.renderTabs();
+              UI.renderRoomBar();
               SN.Tray.render();
+              SN.RoomSelect.show();
               UI.toast('↺ Fresh start!');
             }
           }

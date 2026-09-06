@@ -14,6 +14,7 @@
     SN.Profiles.init();
     SN.UI.init();               // modal / toast / settings chrome — no state needed yet
     SN.ProfileScreen.init();
+    SN.RoomSelect.init();
     SN.ProfileScreen.show();
   }
 
@@ -33,8 +34,9 @@
       SN.Tray.render();
     }
     SN.UI.renderCoins();
-    SN.UI.renderTabs();
+    SN.UI.renderRoomBar();
     SN.ProfileScreen.hide();
+    SN.RoomSelect.show();       // pick a room before decorating
 
     var p = SN.Profiles.active();
     if (SN.state.stats.plays === 0 && SN.currentLayout().length === 0) {
@@ -48,6 +50,7 @@
   SN.leaveGame = function () {
     SN.save(true);
     SN.Profiles.touch();
+    SN.RoomSelect.hide();
     SN.ProfileScreen.show();
   };
 

@@ -11,7 +11,7 @@
      wallPattern  'stripes' | 'dots' | 'stars' | 'grid' | 'plain'
      floor        floor base colour
      floorInk     floor pattern colour
-     floorPattern 'plank' | 'checker' | 'tile'
+     floorPattern 'plank' | 'checker' | 'tile' | 'plain'
      skirting     baseboard colour along the bottom of the walls
      accent       used for the tab swatch + soft room glow
      mood         'day' | 'night'  (night dims the ambient light)
@@ -53,5 +53,12 @@
   ];
 
   SN.ROOM_BY_ID = SN.ROOMS.reduce(function (m, r) { m[r.id] = r; return m; }, {});
+
+  /** The look every player-added room starts with: plain and undecorated. */
+  SN.BLANK_ROOM_THEME = {
+    wall: '#f7f2ea', wallInk: '#f7f2ea', wallPattern: 'plain',
+    floor: '#e3d5c0', floorInk: '#e3d5c0', floorPattern: 'plain',
+    skirting: '#fffaf3', accent: '#c9b8a0', mood: 'day'
+  };
 
 })(window.SN = window.SN || {});

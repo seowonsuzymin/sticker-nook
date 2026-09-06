@@ -71,7 +71,7 @@
       '<div class="ps-stats">' +
       '<span><span class="coin-icon coin-icon-sm"></span>' + s.coins + '</span>' +
       '<span>' + s.owned + '/' + SN.STICKERS.length + ' stickers</span>' +
-      '<span>' + s.rooms + '/' + SN.ROOMS.length + ' rooms</span>' +
+      '<span>' + s.rooms + ' room' + (s.rooms === 1 ? '' : 's') + '</span>' +
       '</div>' +
       '<div class="ps-last">' + SN.Profiles.lastPlayedLabel(p) + '</div>' +
       '<div class="ps-play">Play</div>' +
