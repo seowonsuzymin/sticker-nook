@@ -257,14 +257,6 @@ body.is-dragging { cursor: grabbing; user-select: none; }
   pointer-events: none;
 }
 
-.hex-lock {
-  position: absolute;
-  left: 50%; top: 34%;
-  transform: translate(-50%, -50%);
-  font-size: clamp(20px, 5vw, 30px);
-  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .3));
-  pointer-events: none;
-}
 .hex-level {
   position: absolute;
   left: 50%; top: 60%;

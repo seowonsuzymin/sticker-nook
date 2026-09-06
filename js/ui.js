@@ -113,44 +113,6 @@
     });
   }
 
-  /** Tapping a locked tile on the room grid. */
-  UI.offerRoom = function (roomId) {
-    var r = SN.roomDef(roomId);
-    if (!r || SN.roomUnlocked(roomId)) return;
-
-    if (SN.state.coins < r.price) {
-      UI.modal({
-        art: '<div class="modal-room">' + SN.roomSwatch(r) + '</div>',
-        title: r.name + ' is locked',
-        body: 'This room unlocks for ' + coin(r.price) + '. You have ' + coin(SN.state.coins) +
-          ' — play a mini-game to make up the difference.',
-        actions: [
-          { label: 'Maybe later', ghost: true },
-          { label: 'Earn coins', primary: true, onClick: function () { SN.Arcade.openRandom(); } }
-        ]
-      });
-      return;
-    }
-
-    UI.modal({
-      art: '<div class="modal-room">' + SN.roomSwatch(r) + '</div>',
-      title: 'Unlock ' + r.name + '?',
-      body: 'A brand new room to decorate, for ' + coin(r.price) + '.',
-      actions: [
-        { label: 'Cancel', ghost: true },
-        {
-          label: 'Unlock', primary: true, onClick: function () {
-            if (!SN.spendCoins(r.price)) return;
-            SN.state.unlockedRooms.push(roomId);
-            SN.save();
-            SN.RoomSelect.render();
-            UI.toast('🏠 ' + r.name + ' unlocked!');
-          }
-        }
-      ]
-    });
-  };
-
   /** Tapping the "new room" tile at the end of the grid. */
   UI.offerNewRoom = function () {
     var price = SN.customRoomPrice();

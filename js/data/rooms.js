@@ -6,23 +6,24 @@
    buys (see js/data/surfaces.js). A slot here is just an id, a
    default name, what it costs to unlock, and a tile colour.
 
+   Every room is available from the start — there are no levels and
+   nothing to unlock. Coins buy what goes *in* a room (wallpapers,
+   floors, stickers) and extra rooms beyond these five.
+
      id      unique string (localStorage key — don't rename; the
              ids below are kept from when these were themed rooms
              so existing saves keep their layouts)
      name    default name — the player can rename any room
-     price   coins to unlock (0 = unlocked from the start)
-     accent  colour of this room's tile on the select grid while
-             it's still locked
    ============================================================ */
 (function (SN) {
   'use strict';
 
   SN.ROOMS = [
-    { id: 'cozy-pink',      name: 'Room 1', price: 0,   accent: '#ff9db4' },
-    { id: 'minty-fresh',    name: 'Room 2', price: 150, accent: '#6fd6b4' },
-    { id: 'sunny-yellow',   name: 'Room 3', price: 300, accent: '#ffc93c' },
-    { id: 'lavender-dream', name: 'Room 4', price: 500, accent: '#a98fe0' },
-    { id: 'midnight-blue',  name: 'Room 5', price: 800, accent: '#7d86e0' }
+    { id: 'cozy-pink',      name: 'Room 1' },
+    { id: 'minty-fresh',    name: 'Room 2' },
+    { id: 'sunny-yellow',   name: 'Room 3' },
+    { id: 'lavender-dream', name: 'Room 4' },
+    { id: 'midnight-blue',  name: 'Room 5' }
   ];
 
   SN.ROOM_BY_ID = SN.ROOMS.reduce(function (m, r) { m[r.id] = r; return m; }, {});

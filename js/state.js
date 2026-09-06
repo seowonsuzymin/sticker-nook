@@ -21,8 +21,6 @@
   function freshState() {
     var owned = SN.STICKERS.filter(function (s) { return s.price === 0; })
       .map(function (s) { return s.id; });
-    var unlocked = SN.ROOMS.filter(function (r) { return r.price === 0; })
-      .map(function (r) { return r.id; });
     var layouts = {};
     SN.ROOMS.forEach(function (r) { layouts[r.id] = []; });
 
@@ -30,8 +28,7 @@
       version: 1,
       coins: STARTING_COINS,
       owned: owned,
-      unlockedRooms: unlocked,
-      activeRoom: unlocked[0] || SN.ROOMS[0].id,
+      activeRoom: SN.ROOMS[0].id,
       layouts: layouts,
       nextUid: 1,
       // Rooms the player added, keyed by id: { name, price }. The presets
@@ -48,7 +45,7 @@
       // over the catalog/default name, and lives per profile so renaming a
       // preset in one nook doesn't touch another.
       roomNames: {},
-      // The order rooms appear on the level grid — this is what "LEVEL N" counts.
+      // The order rooms appear on the select grid.
       roomOrder: SN.ROOMS.map(function (r) { return r.id; }),
       stats: { plays: 0, bestRun: 0, bestCombo: 0, totalEarned: 0 }
     };
@@ -86,11 +83,12 @@
     }
     function isKnownRoom(id) { return !!SN.ROOM_BY_ID[id] || !!base.customRooms[id]; }
 
-    if (Array.isArray(raw.unlockedRooms)) {
-      raw.unlockedRooms.forEach(function (id) {
-        if (isKnownRoom(id) && base.unlockedRooms.indexOf(id) === -1) base.unlockedRooms.push(id);
-      });
-    }
+    // Rooms used to be unlocked one at a time; they're all available now.
+    // The old list is still read below, but only to work out which looks a
+    // returning player had already earned.
+    var wasUnlocked = Array.isArray(raw.unlockedRooms)
+      ? raw.unlockedRooms.filter(isKnownRoom)
+      : SN.ROOMS.map(function (r) { return r.id; });
 
     if (Array.isArray(raw.ownedWalls)) {
       raw.ownedWalls.forEach(function (id) {
@@ -119,7 +117,7 @@
     // wallpaper and floor their unlocked rooms already had, and put them
     // back on, so nothing they'd unlocked suddenly turns plain.
     if (!raw.roomStyles) {
-      base.unlockedRooms.forEach(function (id) {
+      wasUnlocked.forEach(function (id) {
         var look = SN.LEGACY_ROOM_LOOKS[id];
         if (!look) return;
         if (base.ownedWalls.indexOf(look.wall) === -1) base.ownedWalls.push(look.wall);
@@ -144,7 +142,7 @@
     SN.ROOMS.map(function (r) { return r.id; }).concat(Object.keys(base.customRooms))
       .forEach(function (id) { if (!seen[id]) { order.push(id); seen[id] = true; } });
     base.roomOrder = order;
-    if (base.unlockedRooms.indexOf(raw.activeRoom) !== -1) base.activeRoom = raw.activeRoom;
+    if (isKnownRoom(raw.activeRoom)) base.activeRoom = raw.activeRoom;
 
     // Layouts: keep only stickers/rooms that still exist in the catalog.
     var maxUid = 0;
@@ -255,7 +253,6 @@
     SN.save();
     return true;
   };
-  SN.roomUnlocked = function (roomId) { return SN.state.unlockedRooms.indexOf(roomId) !== -1; };
   SN.currentLayout = function () { return SN.state.layouts[SN.state.activeRoom]; };
 
   /**
@@ -270,7 +267,7 @@
     // Always a copy — the catalog is shared between profiles, so nothing
     // here may mutate it.
     var def = Object.assign({}, SN.BLANK_ROOM_THEME, preset
-      ? { id: roomId, name: preset.name, price: preset.price, accent: preset.accent }
+      ? { id: roomId, name: preset.name }
       : { id: roomId, name: custom.name, price: custom.price });
 
     // Whatever wallpaper and floor this room is wearing.
@@ -317,7 +314,6 @@
 
     SN.state.customRooms[id] = { name: name, price: SN.customRoomPrice() };
     SN.state.layouts[id] = [];
-    SN.state.unlockedRooms.push(id);
     SN.state.roomOrder.push(id);
     SN.state.activeRoom = id;
     SN.save();

@@ -252,12 +252,12 @@
 
   /**
    * One tile on the room-select grid.
-   *   locked  → the room's accent colour, flat, for a lock + LEVEL label
-   *   unlocked→ a miniature of the real room, furniture and all
+   * Always a miniature of the real room — walls, floor and the furniture
+   * actually in it.
    */
-  SN.hexRoom = function (theme, layout, locked) {
+  SN.hexRoom = function (theme, layout) {
     var uid = 'hex-' + theme.id;
-    var inner = locked ? lockedFill(theme) : dioramaFill(theme, layout || [], uid);
+    var inner = dioramaFill(theme, layout || [], uid);
 
     return '<svg class="hex-svg" viewBox="0 0 ' + HEX_W + ' ' + HEX_H + '" aria-hidden="true">' +
       '<defs><clipPath id="clip-' + uid + '">' +
@@ -267,11 +267,6 @@
       'stroke-linejoin="round"/>' +
       '</svg>';
   };
-
-  function lockedFill(theme) {
-    return '<polygon points="' + hexPoints() + '" fill="' + theme.accent + '"/>' +
-      '<polygon points="' + hexPoints() + '" fill="#000" opacity=".12"/>';
-  }
 
   /**
    * The room shrunk into the tile: the same two walls and floor as the real

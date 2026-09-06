@@ -159,7 +159,7 @@
       fresh: !s,
       coins: s && typeof s.coins === 'number' ? s.coins : 0,
       owned: s && Array.isArray(s.owned) ? s.owned.length : 0,
-      rooms: s && Array.isArray(s.unlockedRooms) ? s.unlockedRooms.length : 0,
+      rooms: s && Array.isArray(s.roomOrder) ? s.roomOrder.length : SN.ROOMS.length,
       placed: placed,
       plays: s && s.stats && typeof s.stats.plays === 'number' ? s.stats.plays : 0
     };

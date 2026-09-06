@@ -2,10 +2,10 @@
    Room select — the honeycomb of rooms you pick from
    ------------------------------------------------------------
    A fixed top bar (home / coins / settings) over a vertically
-   scrolling hex grid. Locked rooms are a flat coloured hex with a
-   lock and a LEVEL label; unlocked ones show a miniature of the
-   real room — walls, floor and the furniture actually in it — with
-   a round decorate button hanging off the bottom edge.
+   scrolling hex grid. Every tile is a miniature of the real room —
+   walls, floor and the furniture actually in it — with a round
+   decorate button hanging off the bottom edge. Nothing is locked:
+   coins buy what goes in a room, and extra rooms past the first five.
 
    Tiles are laid out as a proper honeycomb: rows of 3, offset rows
    of 2 tucked between them, so 5 rooms make one tidy block.
@@ -67,24 +67,19 @@
     var tiles = ids.map(function (id, i) {
       var def = SN.roomDef(id);
       if (!def) return '';
-      var unlocked = SN.roomUnlocked(id);
       var layout = SN.state.layouts[id] || [];
       var s = slot(i);
 
-      return '<div class="hex' + (unlocked ? '' : ' is-locked') + '" ' +
-        'data-room="' + esc(id) + '" ' +
+      return '<div class="hex" data-room="' + esc(id) + '" ' +
         'style="--row:' + s.row + ';--col:' + s.col + ';--off:' + s.off + '">' +
-        SN.hexRoom(def, layout, !unlocked) +
-        (unlocked
-          ? '<div class="hex-name">' + esc(def.name) + '</div>' +
-            '<button class="hex-go" data-go="' + esc(id) + '" ' +
-            'title="Decorate ' + esc(def.name) + '" aria-label="Decorate ' + esc(def.name) + '">' +
-            '<svg viewBox="0 0 24 24" aria-hidden="true">' +
-            '<path d="M4 20 L4.6 16 L15.4 5.2 L18.8 8.6 L8 19.4 Z M14 6.6 L17.4 10" ' +
-            'fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>' +
-            '</svg></button>'
-          : '<div class="hex-lock">🔒</div>' +
-            '<div class="hex-level">LEVEL ' + (i + 1) + '</div>') +
+        SN.hexRoom(def, layout) +
+        '<div class="hex-name">' + esc(def.name) + '</div>' +
+        '<button class="hex-go" data-go="' + esc(id) + '" ' +
+        'title="Decorate ' + esc(def.name) + '" aria-label="Decorate ' + esc(def.name) + '">' +
+        '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+        '<path d="M4 20 L4.6 16 L15.4 5.2 L18.8 8.6 L8 19.4 Z M14 6.6 L17.4 10" ' +
+        'fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>' +
+        '</svg></button>' +
         '</div>';
     });
 
@@ -119,14 +114,11 @@
     });
   };
 
-  function pick(id) {
-    if (SN.roomUnlocked(id)) enter(id);
-    else SN.UI.offerRoom(id);
-  }
+  function pick(id) { enter(id); }
 
   /** Open a room for decorating. */
   function enter(id) {
-    if (!SN.roomUnlocked(id)) return;
+    if (!SN.roomDef(id)) return;
     SN.state.activeRoom = id;
     SN.save();
     RS.hide();
