@@ -7,6 +7,12 @@
    decorate button hanging off the bottom edge. Nothing is locked:
    coins buy what goes in a room, and extra rooms past the first five.
 
+   Tiles can be rearranged by dragging one onto another, which swaps
+   their places. Swapping rather than inserting keeps the honeycomb
+   stable — an insert would reflow every row after it. On touch a drag
+   starts with a short hold, so an ordinary swipe still scrolls the
+   grid; with a mouse a few pixels of movement is enough.
+
    Tiles are laid out as a proper honeycomb: rows of 3, offset rows
    of 2 tucked between them, so 5 rooms make one tidy block.
    ============================================================ */
@@ -101,20 +107,138 @@
     gridEl.style.setProperty('--rows', rows);
 
     gridEl.querySelectorAll('.hex[data-room]').forEach(function (el) {
-      el.addEventListener('click', function () { pick(el.dataset.room); });
+      el.addEventListener('pointerdown', function (e) { beginTileDrag(e, el); });
     });
     gridEl.querySelectorAll('.hex-go').forEach(function (b) {
+      // Must not start a tile drag — this button has its own job.
+      b.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
       b.addEventListener('click', function (e) {
         e.stopPropagation();
         enter(b.dataset.go);
       });
     });
+
+    // Give the two tiles that just traded places a little nudge.
+    swapped.forEach(function (id) {
+      var el = gridEl.querySelector('.hex[data-room="' + esc(id) + '"]');
+      if (el) el.classList.add('is-swapped');
+    });
+    swapped = [];
     gridEl.querySelectorAll('.hex.is-add').forEach(function (b) {
       b.addEventListener('click', function () { SN.UI.offerNewRoom(); });
     });
   };
 
-  function pick(id) { enter(id); }
+  /* ── Dragging a tile onto another to swap them ─────────── */
+
+  var swapped = [];
+  var TAP_SLOP = 8;        // movement below this is still a tap, not a drag
+  var HOLD_MS = 380;       // touch: hold this long to pick a tile up
+
+  function beginTileDrag(e, el) {
+    if (e.button != null && e.button !== 0) return;
+    var id = el.dataset.room;
+    var touch = e.pointerType === 'touch';
+    var pid = e.pointerId;
+    var startX = e.clientX, startY = e.clientY;
+    var started = false, abandoned = false, maxDist = 0;
+    var holdTimer = touch ? setTimeout(start, HOLD_MS) : null;
+
+    function start() {
+      holdTimer = null;
+      if (abandoned) return;
+      started = true;
+      try { el.setPointerCapture(pid); } catch (err) { /* ignore */ }
+      el.classList.add('is-dragging');
+      document.body.classList.add('is-dragging');
+    }
+
+    function move(ev) {
+      if (ev.pointerId !== pid) return;
+      var dx = ev.clientX - startX, dy = ev.clientY - startY;
+      maxDist = Math.max(maxDist, Math.hypot(dx, dy));
+
+      if (!started) {
+        // On touch, moving before the hold completes means they meant to
+        // scroll the grid — let the browser have it.
+        if (touch) {
+          if (maxDist > 10) { clearTimeout(holdTimer); abandoned = true; }
+          return;
+        }
+        if (maxDist < 6) return;
+        start();
+      }
+
+      ev.preventDefault();
+      el.style.setProperty('--dx', dx + 'px');
+      el.style.setProperty('--dy', dy + 'px');
+
+      var over = tileAt(ev.clientX, ev.clientY, id);
+      gridEl.querySelectorAll('.hex.is-drop-target').forEach(function (t) {
+        t.classList.remove('is-drop-target');
+      });
+      if (over) over.classList.add('is-drop-target');
+    }
+
+    function finish(ev) {
+      if (ev.pointerId !== pid) return;
+      cleanup();
+      if (abandoned) return;
+
+      // A hold that never moved is still just a tap.
+      if (!started || maxDist < TAP_SLOP) { enter(id); return; }
+
+      var over = tileAt(ev.clientX, ev.clientY, id);
+      if (over) {
+        swapped = [id, over.dataset.room];
+        SN.swapRooms(id, over.dataset.room);
+      }
+      RS.render();
+    }
+
+    function cancel(ev) {
+      if (ev.pointerId !== pid) return;
+      abandoned = true;
+      cleanup();
+      RS.render();
+    }
+
+    function cleanup() {
+      if (holdTimer) clearTimeout(holdTimer);
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', finish);
+      window.removeEventListener('pointercancel', cancel);
+      document.body.classList.remove('is-dragging');
+      el.classList.remove('is-dragging');
+      el.style.removeProperty('--dx');
+      el.style.removeProperty('--dy');
+      gridEl.querySelectorAll('.hex.is-drop-target').forEach(function (t) {
+        t.classList.remove('is-drop-target');
+      });
+    }
+
+    window.addEventListener('pointermove', move, { passive: false });
+    window.addEventListener('pointerup', finish);
+    window.addEventListener('pointercancel', cancel);
+  }
+
+  /**
+   * The tile under a point. Hex bounding boxes overlap, so this picks the
+   * nearest centre rather than trusting elementFromPoint.
+   */
+  function tileAt(x, y, exceptId) {
+    var best = null, bestD = Infinity;
+    gridEl.querySelectorAll('.hex[data-room]').forEach(function (el) {
+      if (el.dataset.room === exceptId) return;
+      var r = el.getBoundingClientRect();
+      var d = Math.hypot(x - (r.left + r.width / 2), y - (r.top + r.height / 2));
+      if (d < bestD) { bestD = d; best = el; }
+    });
+    // Only count it if the pointer is actually over that tile, roughly.
+    if (!best) return null;
+    var w = best.getBoundingClientRect().width;
+    return bestD < w * 0.55 ? best : null;
+  }
 
   /** Open a room for decorating. */
   function enter(id) {

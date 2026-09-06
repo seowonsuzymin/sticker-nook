@@ -240,6 +240,29 @@ body.is-dragging { cursor: grabbing; user-select: none; }
 .hex:hover { transform: translateY(-3px); filter: drop-shadow(0 6px 10px rgba(120, 80, 110, .22)); z-index: 60; }
 .hex:active { transform: translateY(0); }
 
+/* Rearranging. pan-y so an ordinary swipe still scrolls the grid on
+   touch — a drag there begins with a short hold instead. */
+.hex[data-room] { touch-action: pan-y; }
+
+.hex.is-dragging {
+  transform: translate(var(--dx, 0px), var(--dy, 0px)) scale(1.08);
+  filter: drop-shadow(0 12px 16px rgba(120, 80, 110, .38));
+  z-index: 200;
+  cursor: grabbing;
+  transition: none;
+}
+.hex.is-drop-target {
+  transform: scale(1.05);
+  filter: drop-shadow(0 0 5px var(--pink)) drop-shadow(0 0 2px var(--pink));
+  z-index: 70;
+}
+.hex.is-swapped { animation: hex-settle .42s cubic-bezier(.3, 1.5, .5, 1); }
+@keyframes hex-settle {
+  0% { transform: scale(1.14); }
+  60% { transform: scale(.97); }
+  100% { transform: scale(1); }
+}
+
 .hex-svg { width: 100%; height: 100%; display: block; overflow: visible; }
 
 .hex-name {

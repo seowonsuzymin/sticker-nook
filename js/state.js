@@ -319,6 +319,17 @@
       CUSTOM_ROOM_PRICE_STEP * Object.keys(SN.state.customRooms).length;
   };
 
+  /** Exchanges two rooms' places on the grid. */
+  SN.swapRooms = function (a, b) {
+    var order = SN.state.roomOrder;
+    var i = order.indexOf(a), j = order.indexOf(b);
+    if (i === -1 || j === -1 || i === j) return false;
+    order[i] = b;
+    order[j] = a;
+    SN.save();
+    return true;
+  };
+
   /** There must always be at least one room left to stand in. */
   SN.canDeleteRoom = function () { return SN.state.roomOrder.length > 1; };
 
