@@ -144,6 +144,27 @@ body.is-dragging { cursor: grabbing; user-select: none; }
   font-weight: 700;
   letter-spacing: .2px;
 }
+
+/* The room name doubles as the rename button. */
+.room-title {
+  display: flex; align-items: center; gap: 7px;
+  padding: 4px 10px;
+  margin: 0;
+  font: 700 22px var(--font);
+  letter-spacing: .2px;
+  color: var(--ink);
+  background: none;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease;
+}
+.room-title:hover { background: rgba(255, 255, 255, .75); border-color: var(--ink); }
+.rt-pencil { width: 15px; height: 15px; flex: none; opacity: .4; }
+.room-title:hover .rt-pencil { opacity: .85; }
+
+.rename-input { margin-top: 12px; margin-bottom: 6px; }
+.rename-hint { display: block; font-size: 11.5px; color: var(--ink-soft); }
 .hud-right { display: flex; align-items: center; gap: 9px; }
 
 /* ── Room select: fixed bar + scrolling honeycomb ────────── */
@@ -1053,6 +1074,29 @@ body.is-dragging { cursor: grabbing; user-select: none; }
 .settings-who b { color: var(--ink); }
 .settings-who-avatar { width: 34px; height: 34px; }
 .settings-who-avatar svg { width: 100%; height: 100%; display: block; }
+
+/* ── TEMPORARY dev helper ────────────────────────────────────
+   Deliberately styled as a debug affordance. Delete this block along
+   with the button in index.html and its handler in js/ui.js. */
+.dev-coins {
+  position: fixed;
+  /* Mid-left keeps it clear of the header and the sticker tray. */
+  left: 10px; top: 50%;
+  transform: translateY(-50%);
+  z-index: 900;
+  display: flex; align-items: center; gap: 5px;
+  padding: 6px 12px;
+  font: 700 12px var(--font);
+  color: var(--ink-soft);
+  background: rgba(255, 255, 255, .9);
+  border: 2px dashed var(--ink-soft);
+  border-radius: 999px;
+  cursor: pointer;
+  opacity: .75;
+}
+.dev-coins:hover { opacity: 1; color: var(--ink); }
+/* Nothing to add coins to until a nook is loaded. */
+body:has(#profileScreen:not([hidden])) .dev-coins { display: none; }
 
 /* ── Toasts ──────────────────────────────────────────────── */
 

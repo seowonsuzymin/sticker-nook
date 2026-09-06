@@ -24,6 +24,17 @@
       SN.RoomSelect.show();
     });
 
+    document.getElementById('roomTitle').addEventListener('click', function () {
+      if (SN.state) UI.offerRename(SN.state.activeRoom);
+    });
+
+    // TEMPORARY dev helper — delete this listener with the button.
+    document.getElementById('btnDevCoins').addEventListener('click', function () {
+      if (!SN.state) return;
+      SN.addCoins(1000);
+      UI.toast('+1000 coins (dev)');
+    });
+
     // Dismiss the modal by clicking the backdrop.
     modalOverlay.addEventListener('pointerdown', function (e) {
       if (e.target === modalOverlay) UI.closeModal();
@@ -57,8 +68,50 @@
   /** The title in the decorate view's top bar. */
   UI.renderRoomBar = function () {
     var r = SN.roomDef(SN.state.activeRoom);
-    document.getElementById('roomTitle').textContent = r ? r.name : 'Room';
+    document.getElementById('roomTitleText').textContent = r ? r.name : 'Room';
   };
+
+  /** Rename the room you're in. Clearing the field restores its original name. */
+  UI.offerRename = function (roomId) {
+    var r = SN.roomDef(roomId);
+    if (!r) return;
+    var fallback = SN.roomDefaultName(roomId);
+
+    UI.modal({
+      title: 'Rename room',
+      body: 'What would you like to call this room?' +
+        '<input class="np-name rename-input" id="renameInput" type="text" maxlength="18" ' +
+        'autocomplete="off" spellcheck="false" value="' + esc(r.name) + '">' +
+        '<small class="rename-hint">Leave it empty to go back to &ldquo;' + esc(fallback) + '&rdquo;.</small>',
+      actions: [
+        { label: 'Cancel', ghost: true },
+        {
+          label: 'Save', primary: true, onClick: function () {
+            var el = document.getElementById('renameInput');
+            SN.renameRoom(roomId, el ? el.value : '');
+            UI.renderRoomBar();
+            UI.toast('Renamed to ' + SN.roomDef(roomId).name);
+          }
+        }
+      ]
+    });
+
+    var input = document.getElementById('renameInput');
+    if (!input) return;
+    setTimeout(function () { input.focus(); input.select(); }, 30);
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        document.querySelector('#modalActions .btn-play').click();
+      }
+    });
+  };
+
+  function esc(v) {
+    return String(v == null ? '' : v).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
 
   /** Tapping a locked tile on the room grid. */
   UI.offerRoom = function (roomId) {

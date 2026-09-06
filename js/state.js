@@ -37,6 +37,10 @@
       // Rooms the player added, keyed by id: { name, price }. The presets
       // above aren't listed here.
       customRooms: {},
+      // Player-chosen room names, keyed by room id. An override here wins
+      // over the catalog/default name, and lives per profile so renaming a
+      // preset in one nook doesn't touch another.
+      roomNames: {},
       // The order rooms appear on the level grid — this is what "LEVEL N" counts.
       roomOrder: SN.ROOMS.map(function (r) { return r.id; }),
       stats: { plays: 0, bestRun: 0, bestCombo: 0, totalEarned: 0 }
@@ -78,6 +82,15 @@
     if (Array.isArray(raw.unlockedRooms)) {
       raw.unlockedRooms.forEach(function (id) {
         if (isKnownRoom(id) && base.unlockedRooms.indexOf(id) === -1) base.unlockedRooms.push(id);
+      });
+    }
+
+    base.roomNames = {};
+    if (raw.roomNames && typeof raw.roomNames === 'object') {
+      Object.keys(raw.roomNames).forEach(function (id) {
+        if (!isKnownRoom(id)) return;
+        var n = String(raw.roomNames[id] || '').replace(/\s+/g, ' ').trim().slice(0, 18);
+        if (n) base.roomNames[id] = n;
       });
     }
 
@@ -192,10 +205,37 @@
    * the fields the renderer needs. Null for an id that doesn't exist.
    */
   SN.roomDef = function (roomId) {
-    if (SN.ROOM_BY_ID[roomId]) return SN.ROOM_BY_ID[roomId];
+    var preset = SN.ROOM_BY_ID[roomId];
+    var custom = !preset && SN.state.customRooms[roomId];
+    if (!preset && !custom) return null;
+
+    // Always a copy — a rename must never mutate the shared catalog, or the
+    // new name would bleed into every other profile.
+    var def = preset
+      ? Object.assign({}, preset)
+      : Object.assign({}, SN.BLANK_ROOM_THEME, { id: roomId, name: custom.name, price: custom.price });
+
+    var override = SN.state.roomNames[roomId];
+    if (override) def.name = override;
+    return def;
+  };
+
+  /** The name a room would have with no rename applied. */
+  SN.roomDefaultName = function (roomId) {
+    if (SN.ROOM_BY_ID[roomId]) return SN.ROOM_BY_ID[roomId].name;
     var c = SN.state.customRooms[roomId];
-    if (!c) return null;
-    return Object.assign({}, SN.BLANK_ROOM_THEME, { id: roomId, name: c.name, price: c.price });
+    return c ? c.name : null;
+  };
+
+  /** Renames a room. An empty name clears the override and restores the default. */
+  SN.renameRoom = function (roomId, name) {
+    var fallback = SN.roomDefaultName(roomId);
+    if (fallback == null) return false;
+    var clean = String(name == null ? '' : name).replace(/\s+/g, ' ').trim().slice(0, 18);
+    if (!clean || clean === fallback) delete SN.state.roomNames[roomId];
+    else SN.state.roomNames[roomId] = clean;
+    SN.save();
+    return true;
   };
 
   /** What the next player-added room costs. */
