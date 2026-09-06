@@ -336,6 +336,52 @@
       '</svg>';
   };
 
+  /**
+   * A compact room preview — same walls and floor as the real thing, no
+   * character or furniture. Used as the swatch on wallpaper / floor items,
+   * so what you see in the tray is literally what the room will look like.
+   */
+  SN.roomPreview = function (theme) {
+    var g = GEO;
+    var wp = wallPatternDef(theme, 'pv-' + theme.id);
+    var leftWall = pts(g.CT, g.C, g.L, g.LT);
+    var rightWall = pts(g.CT, g.C, g.R, g.RT);
+    var floor = pts(g.C, g.L, g.B, g.R);
+
+    return '<svg viewBox="40 150 920 570" preserveAspectRatio="xMidYMid slice" ' +
+      'stroke="' + INK + '" stroke-width="6" stroke-linejoin="round" fill="none" aria-hidden="true">' +
+      '<defs>' + wp.def +
+      '<clipPath id="pvf-' + theme.id + '"><polygon points="' + floor + '"/></clipPath></defs>' +
+      '<polygon points="' + leftWall + '" fill="' + theme.wall + '" stroke="none"/>' +
+      '<polygon points="' + rightWall + '" fill="' + theme.wall + '" stroke="none"/>' +
+      (wp.fill
+        ? '<polygon points="' + leftWall + '" fill="' + wp.fill + '" stroke="none" opacity=".9"/>' +
+          '<polygon points="' + rightWall + '" fill="' + wp.fill + '" stroke="none" opacity=".9"/>'
+        : '') +
+      '<polygon points="' + leftWall + '" fill="#000" opacity=".09" stroke="none"/>' +
+      '<polygon points="' + floor + '" fill="' + theme.floor + '" stroke="none"/>' +
+      '<g clip-path="url(#pvf-' + theme.id + ')">' + floorPattern(theme) + '</g>' +
+      '<polygon points="' + leftWall + '"/><polygon points="' + rightWall + '"/>' +
+      '<polygon points="' + floor + '"/>' +
+      '</svg>';
+  };
+
+  /** Preview of one surface on an otherwise plain room. */
+  SN.surfaceSwatch = function (surface, kind) {
+    var theme = Object.assign({}, SN.BLANK_ROOM_THEME, { id: 'sw-' + surface.id });
+    if (kind === 'wall') {
+      Object.assign(theme, {
+        wall: surface.wall, wallInk: surface.wallInk, wallPattern: surface.wallPattern,
+        skirting: surface.skirting, mood: surface.mood
+      });
+    } else {
+      Object.assign(theme, {
+        floor: surface.floor, floorInk: surface.floorInk, floorPattern: surface.floorPattern
+      });
+    }
+    return SN.roomPreview(theme);
+  };
+
   /** Small swatch used on the room-switcher tabs. */
   SN.roomSwatch = function (theme) {
     return '<svg viewBox="0 0 40 34" aria-hidden="true">' +

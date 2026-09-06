@@ -538,6 +538,28 @@ body.is-dragging { cursor: grabbing; user-select: none; }
   padding: 1px 8px;
 }
 .tray-tag-owned { background: #dff5ec; color: #3f8f75; }
+.tray-tag-applied { background: var(--pink); color: #fff; }
+
+/* Wallpaper / floor items: a live preview of the room wearing it. */
+.surface-item { cursor: pointer; }
+.surface-art {
+  width: 58px; height: 44px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid var(--ink);
+}
+.surface-art svg { width: 100%; height: 100%; display: block; }
+.surface-item.is-locked .surface-art svg { filter: grayscale(.7) brightness(1.05); opacity: .55; }
+.surface-item.is-applied { border-color: var(--pink); box-shadow: 0 3px 0 var(--pink); }
+
+.modal-surface {
+  width: 108px; height: 82px;
+  margin: 0 auto;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 3px solid var(--ink);
+}
+.modal-surface svg { width: 100%; height: 100%; display: block; }
 
 /* ── Overlays ────────────────────────────────────────────── */
 

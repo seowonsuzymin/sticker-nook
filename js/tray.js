@@ -52,6 +52,9 @@
 
   Tray.render = function () {
     if (!scroll) return;
+    if (activeCat === 'walls') return renderSurfaces(SN.WALLPAPERS, 'wall');
+    if (activeCat === 'floors') return renderSurfaces(SN.FLOORS, 'floor');
+
     var list = visibleStickers();
 
     scroll.innerHTML = list.map(function (s) {
@@ -75,6 +78,91 @@
 
     scroll.querySelectorAll('.tray-item').forEach(wireItem);
   };
+
+  /**
+   * Wallpapers and floors. Unlike stickers these aren't dragged — tap an
+   * owned one to put it on the room you're in, tap a locked one to buy it.
+   */
+  function renderSurfaces(catalog, kind) {
+    var owns = kind === 'wall' ? SN.ownsWall : SN.ownsFloor;
+    var applied = SN.roomStyle(SN.state.activeRoom)[kind];
+
+    scroll.innerHTML = catalog.slice().sort(function (a, b) {
+      var ao = owns(a.id) ? 0 : 1, bo = owns(b.id) ? 0 : 1;
+      return ao !== bo ? ao - bo : a.price - b.price;
+    }).map(function (sf) {
+      var owned = owns(sf.id);
+      var isOn = applied === sf.id;
+      return '<div class="tray-item surface-item' + (owned ? ' is-owned' : ' is-locked') +
+        (!owned && SN.state.coins >= sf.price ? ' is-affordable' : '') +
+        (isOn ? ' is-applied' : '') + '" data-surface="' + sf.id + '" title="' + sf.name + '">' +
+        '<div class="tray-art surface-art">' + SN.surfaceSwatch(sf, kind) +
+        (owned ? '' : '<span class="tray-lock">🔒</span>') + '</div>' +
+        '<div class="tray-name">' + sf.name + '</div>' +
+        (owned
+          ? '<div class="tray-tag ' + (isOn ? 'tray-tag-applied' : 'tray-tag-owned') + '">' +
+            (isOn ? 'On' : 'Owned') + '</div>'
+          : '<div class="tray-tag"><span class="coin-icon coin-icon-sm"></span>' + sf.price + '</div>') +
+        '</div>';
+    }).join('');
+
+    countEl.textContent = catalog.filter(function (sf) { return owns(sf.id); }).length +
+      ' / ' + catalog.length + ' owned';
+
+    scroll.querySelectorAll('.surface-item').forEach(function (el) {
+      el.addEventListener('click', function () { pickSurface(catalog, kind, el.dataset.surface); });
+    });
+  }
+
+  function pickSurface(catalog, kind, id) {
+    var sf = catalog.filter(function (x) { return x.id === id; })[0];
+    if (!sf) return;
+    var owns = kind === 'wall' ? SN.ownsWall : SN.ownsFloor;
+    var label = kind === 'wall' ? 'wallpaper' : 'floor';
+
+    if (owns(id)) {
+      SN.applySurface(SN.state.activeRoom, kind, id);
+      SN.Room.render();
+      Tray.render();
+      SN.UI.toast('✨ ' + sf.name + ' applied.');
+      return;
+    }
+
+    if (SN.state.coins < sf.price) {
+      SN.UI.modal({
+        art: '<div class="modal-surface">' + SN.surfaceSwatch(sf, kind) + '</div>',
+        title: 'Not quite yet!',
+        body: '<b>' + sf.name + '</b> costs ' + coin(sf.price) + '. You need ' +
+          coin(sf.price - SN.state.coins) + ' more — play a mini-game to earn them.',
+        actions: [
+          { label: 'Maybe later', ghost: true },
+          { label: 'Earn coins', primary: true, onClick: function () { SN.Arcade.openRandom(); } }
+        ]
+      });
+      return;
+    }
+
+    SN.UI.modal({
+      art: '<div class="modal-surface">' + SN.surfaceSwatch(sf, kind) + '</div>',
+      title: 'Buy ' + sf.name + '?',
+      body: 'This ' + label + ' costs ' + coin(sf.price) + '. Once it\'s yours you can put it ' +
+        'on any room, as many as you like.',
+      actions: [
+        { label: 'Cancel', ghost: true },
+        {
+          label: 'Buy & apply', primary: true, onClick: function () {
+            if (!SN.spendCoins(sf.price)) return;
+            (kind === 'wall' ? SN.state.ownedWalls : SN.state.ownedFloors).push(id);
+            SN.applySurface(SN.state.activeRoom, kind, id);
+            SN.save();
+            SN.emit('owned');
+            SN.Room.render();
+            SN.UI.toast('✨ ' + sf.name + ' unlocked and applied!');
+          }
+        }
+      ]
+    });
+  }
 
   function wireItem(el) {
     var id = el.dataset.id;

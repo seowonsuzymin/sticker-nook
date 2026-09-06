@@ -37,6 +37,13 @@
       // Rooms the player added, keyed by id: { name, price }. The presets
       // above aren't listed here.
       customRooms: {},
+      // Wallpapers and floors are bought once and can be applied to any room.
+      ownedWalls: SN.WALLPAPERS.filter(function (w) { return w.price === 0; })
+        .map(function (w) { return w.id; }),
+      ownedFloors: SN.FLOORS.filter(function (f) { return f.price === 0; })
+        .map(function (f) { return f.id; }),
+      // What each room is wearing: { roomId: { wall: id, floor: id } }.
+      roomStyles: {},
       // Player-chosen room names, keyed by room id. An override here wins
       // over the catalog/default name, and lives per profile so renaming a
       // preset in one nook doesn't touch another.
@@ -82,6 +89,42 @@
     if (Array.isArray(raw.unlockedRooms)) {
       raw.unlockedRooms.forEach(function (id) {
         if (isKnownRoom(id) && base.unlockedRooms.indexOf(id) === -1) base.unlockedRooms.push(id);
+      });
+    }
+
+    if (Array.isArray(raw.ownedWalls)) {
+      raw.ownedWalls.forEach(function (id) {
+        if (SN.WALLPAPER_BY_ID[id] && base.ownedWalls.indexOf(id) === -1) base.ownedWalls.push(id);
+      });
+    }
+    if (Array.isArray(raw.ownedFloors)) {
+      raw.ownedFloors.forEach(function (id) {
+        if (SN.FLOOR_BY_ID[id] && base.ownedFloors.indexOf(id) === -1) base.ownedFloors.push(id);
+      });
+    }
+
+    base.roomStyles = {};
+    if (raw.roomStyles && typeof raw.roomStyles === 'object') {
+      Object.keys(raw.roomStyles).forEach(function (id) {
+        var st = raw.roomStyles[id];
+        if (!isKnownRoom(id) || !st || typeof st !== 'object') return;
+        var entry = {};
+        if (SN.WALLPAPER_BY_ID[st.wall]) entry.wall = st.wall;
+        if (SN.FLOOR_BY_ID[st.floor]) entry.floor = st.floor;
+        if (entry.wall || entry.floor) base.roomStyles[id] = entry;
+      });
+    }
+
+    // Upgrading a save from when rooms were themed: hand the player the
+    // wallpaper and floor their unlocked rooms already had, and put them
+    // back on, so nothing they'd unlocked suddenly turns plain.
+    if (!raw.roomStyles) {
+      base.unlockedRooms.forEach(function (id) {
+        var look = SN.LEGACY_ROOM_LOOKS[id];
+        if (!look) return;
+        if (base.ownedWalls.indexOf(look.wall) === -1) base.ownedWalls.push(look.wall);
+        if (base.ownedFloors.indexOf(look.floor) === -1) base.ownedFloors.push(look.floor);
+        base.roomStyles[id] = { wall: look.wall, floor: look.floor };
       });
     }
 
@@ -197,6 +240,21 @@
   /* ── Convenience helpers ───────────────────────────────── */
 
   SN.owns = function (stickerId) { return SN.state.owned.indexOf(stickerId) !== -1; };
+  SN.ownsWall = function (id) { return SN.state.ownedWalls.indexOf(id) !== -1; };
+  SN.ownsFloor = function (id) { return SN.state.ownedFloors.indexOf(id) !== -1; };
+
+  /** Which wallpaper / floor a room is currently wearing (ids, may be undefined). */
+  SN.roomStyle = function (roomId) { return SN.state.roomStyles[roomId] || {}; };
+
+  /** Puts a wallpaper or floor on a room. `kind` is 'wall' or 'floor'. */
+  SN.applySurface = function (roomId, kind, surfaceId) {
+    var catalog = kind === 'wall' ? SN.WALLPAPER_BY_ID : SN.FLOOR_BY_ID;
+    if (!catalog[surfaceId] || !SN.roomDef(roomId)) return false;
+    var style = SN.state.roomStyles[roomId] || (SN.state.roomStyles[roomId] = {});
+    style[kind] = surfaceId;
+    SN.save();
+    return true;
+  };
   SN.roomUnlocked = function (roomId) { return SN.state.unlockedRooms.indexOf(roomId) !== -1; };
   SN.currentLayout = function () { return SN.state.layouts[SN.state.activeRoom]; };
 
@@ -209,11 +267,19 @@
     var custom = !preset && SN.state.customRooms[roomId];
     if (!preset && !custom) return null;
 
-    // Always a copy — a rename must never mutate the shared catalog, or the
-    // new name would bleed into every other profile.
-    var def = preset
-      ? Object.assign({}, preset)
-      : Object.assign({}, SN.BLANK_ROOM_THEME, { id: roomId, name: custom.name, price: custom.price });
+    // Always a copy — the catalog is shared between profiles, so nothing
+    // here may mutate it.
+    var def = Object.assign({}, SN.BLANK_ROOM_THEME, preset
+      ? { id: roomId, name: preset.name, price: preset.price, accent: preset.accent }
+      : { id: roomId, name: custom.name, price: custom.price });
+
+    // Whatever wallpaper and floor this room is wearing.
+    var style = SN.state.roomStyles[roomId] || {};
+    var w = SN.WALLPAPER_BY_ID[style.wall];
+    var f = SN.FLOOR_BY_ID[style.floor];
+    if (w) Object.assign(def, { wall: w.wall, wallInk: w.wallInk, wallPattern: w.wallPattern,
+      skirting: w.skirting, accent: w.accent, mood: w.mood });
+    if (f) Object.assign(def, { floor: f.floor, floorInk: f.floorInk, floorPattern: f.floorPattern });
 
     var override = SN.state.roomNames[roomId];
     if (override) def.name = override;

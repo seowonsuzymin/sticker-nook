@@ -467,6 +467,8 @@
 
   SN.CATEGORIES = [
     { id: 'all', name: 'All' },
+    { id: 'walls', name: 'Walls' },
+    { id: 'floors', name: 'Floors' },
     { id: 'furniture', name: 'Furniture' },
     { id: 'plush', name: 'Plushies' },
     { id: 'plant', name: 'Plants' },
