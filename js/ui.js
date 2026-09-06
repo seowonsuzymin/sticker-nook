@@ -219,6 +219,40 @@
       });
     });
 
+    document.getElementById('btnDeleteRoom').addEventListener('click', function () {
+      var id = SN.state.activeRoom;
+      var r = SN.roomDef(id);
+      UI.closeSettings();
+      if (!r) return;
+
+      if (!SN.canDeleteRoom()) {
+        UI.modal({
+          title: 'This is your last room',
+          body: 'You need somewhere to put things! Add another room first if you want to get rid of this one.',
+          actions: [{ label: 'OK', primary: true }]
+        });
+        return;
+      }
+
+      var placed = (SN.state.layouts[id] || []).length;
+      UI.modal({
+        title: 'Delete ' + r.name + '?',
+        body: 'This removes the room and ' +
+          (placed ? 'the <b>' + placed + '</b> thing' + (placed === 1 ? '' : 's') + ' in it' : 'everything in it') +
+          '. Wallpapers and floors you bought stay yours. This cannot be undone.',
+        actions: [
+          { label: 'Keep it', ghost: true },
+          {
+            label: 'Delete room', danger: true, onClick: function () {
+              SN.deleteRoom(id);
+              SN.RoomSelect.show();
+              UI.toast('🗑 ' + r.name + ' deleted.');
+            }
+          }
+        ]
+      });
+    });
+
     document.getElementById('btnReset').addEventListener('click', function () {
       UI.closeSettings();
       var who = SN.Profiles.active();
@@ -245,6 +279,11 @@
   }
 
   UI.openSettings = function () {
+    // Settings opens from the room grid too, where "this room" means nothing.
+    var inRoom = !document.getElementById('app').hidden;
+    document.getElementById('btnClearRoom').hidden = !inRoom;
+    document.getElementById('btnDeleteRoom').hidden = !inRoom;
+
     var p = SN.Profiles.active();
     var c = SN.Profiles.colorFor(p.color);
     document.getElementById('settingsWho').innerHTML =

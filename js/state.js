@@ -45,6 +45,9 @@
       // over the catalog/default name, and lives per profile so renaming a
       // preset in one nook doesn't touch another.
       roomNames: {},
+      // Preset rooms the player deleted. Without this the backfill below
+      // would helpfully put them right back on the next load.
+      removedRooms: [],
       // The order rooms appear on the select grid.
       roomOrder: SN.ROOMS.map(function (r) { return r.id; }),
       stats: { plays: 0, bestRun: 0, bestCombo: 0, totalEarned: 0 }
@@ -135,13 +138,22 @@
       });
     }
 
-    // Level order: keep what was saved, drop anything gone, append anything new.
+    base.removedRooms = Array.isArray(raw.removedRooms)
+      ? raw.removedRooms.filter(function (id) { return !!SN.ROOM_BY_ID[id]; })
+      : [];
+
+    // Grid order: keep what was saved, drop anything gone, append anything
+    // new — but never resurrect a preset the player deleted on purpose.
     var order = Array.isArray(raw.roomOrder) ? raw.roomOrder.filter(isKnownRoom) : [];
     var seen = {};
     order.forEach(function (id) { seen[id] = true; });
+    base.removedRooms.forEach(function (id) { seen[id] = true; });
     SN.ROOMS.map(function (r) { return r.id; }).concat(Object.keys(base.customRooms))
       .forEach(function (id) { if (!seen[id]) { order.push(id); seen[id] = true; } });
     base.roomOrder = order;
+
+    // A deleted preset shouldn't leave an empty layout behind.
+    base.removedRooms.forEach(function (id) { delete base.layouts[id]; });
     if (isKnownRoom(raw.activeRoom)) base.activeRoom = raw.activeRoom;
 
     // Layouts: keep only stickers/rooms that still exist in the catalog.
@@ -305,6 +317,30 @@
   SN.customRoomPrice = function () {
     return CUSTOM_ROOM_BASE_PRICE +
       CUSTOM_ROOM_PRICE_STEP * Object.keys(SN.state.customRooms).length;
+  };
+
+  /** There must always be at least one room left to stand in. */
+  SN.canDeleteRoom = function () { return SN.state.roomOrder.length > 1; };
+
+  /**
+   * Deletes a room and everything placed in it. Wallpapers and floors the
+   * player bought are untouched — those are owned, not part of the room.
+   */
+  SN.deleteRoom = function (roomId) {
+    var i = SN.state.roomOrder.indexOf(roomId);
+    if (i === -1 || !SN.canDeleteRoom()) return false;
+
+    SN.state.roomOrder.splice(i, 1);
+    delete SN.state.layouts[roomId];
+    delete SN.state.roomStyles[roomId];
+    delete SN.state.roomNames[roomId];
+
+    if (SN.state.customRooms[roomId]) delete SN.state.customRooms[roomId];
+    else if (SN.state.removedRooms.indexOf(roomId) === -1) SN.state.removedRooms.push(roomId);
+
+    if (SN.state.activeRoom === roomId) SN.state.activeRoom = SN.state.roomOrder[0];
+    SN.save();
+    return true;
   };
 
   /** Adds a blank room to the end of the grid. Caller spends the coins. */
