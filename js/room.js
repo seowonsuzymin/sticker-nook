@@ -11,6 +11,12 @@
   var MIN_SIZE = 0.04, MAX_SIZE = 0.62;
   var EDGE = 0.02;              // keep sticker centres just inside the stage
 
+  /* The room is drawn in orthographic isometric: both floor axes and both
+     wall top/bottom edges run at the same angle, atan(135/460). A sticker
+     is put onto one of those planes by shearing it to that angle — verticals
+     stay vertical, horizontals follow the surface. */
+  var ISO_DEG = Math.atan2(135, 460) * 180 / Math.PI;   // ≈ 16.35°
+
   var stage, roomLayer, layer, hint;
   var selectedUid = null;
 
@@ -72,6 +78,7 @@
     el.className = 'sticker';
     el.dataset.uid = p.uid;
     el.innerHTML =
+      '<div class="sticker-shadow"></div>' +
       '<div class="sticker-art">' + SN.stickerSVG(p.id) + '</div>' +
       '<div class="sticker-frame">' +
       '<button class="s-handle s-del"    title="Delete"      aria-label="Delete sticker">✕</button>' +
@@ -84,13 +91,77 @@
     return el;
   }
 
+  /**
+   * Which surface a point sits on, from its place in the room. Walls are
+   * tested first — they sit above the floor line — and anything that isn't
+   * on one is treated as floor.
+   */
+  function surfaceAt(x, y) {
+    var g = SN.GEO;
+    var gx = x * g.W, gy = y * g.H;
+
+    // Each wall is a parallelogram hanging off the inner corner CT: `b` runs
+    // out along the top edge (±460, 135), `a` down the corner edge (0, 390).
+    var side = gx < g.CT[0] ? -1 : 1;
+    var b = side * (gx - g.CT[0]) / 460;
+    var a = (gy - g.CT[1] - 135 * b) / 390;
+
+    // Anything within a wall's span and no lower than its skirting is on that
+    // wall — including pieces hung above the wall top, like a garland strung
+    // near the ceiling. Only what sits below the skirting is on the floor.
+    if (b >= 0 && b <= 1 && a <= 1) return side < 0 ? 'wall-left' : 'wall-right';
+
+    return 'floor';
+  }
+
+  /**
+   * Depth for stacking: how far forward the sticker's *base* sits, not its
+   * centre — that's what decides which of two overlapping pieces is nearer.
+   * Sticker art stands on the ground line ISO.GY rather than the bottom of its
+   * box, so the base is that far below the centre.
+   *
+   * Three bands keep the obvious cases right regardless of depth: walls are
+   * behind the whole room, floor coverings lie under everything standing on
+   * them, and standing pieces sort against each other by depth.
+   */
+  function depthZ(p, surface) {
+    var drop = (SN.ISO.GY / 100 - 0.5) * (SN.GEO.W / SN.GEO.H);
+    var base = p.y + p.size * drop;
+    if (surface !== 'floor') return 100 + Math.round(base * 100);
+    var st = SN.STICKER_BY_ID[p.id];
+    return (st && st.flat ? 300 : 1000) + Math.round(base * 2000);
+  }
+
+  // Shared with the hex-grid miniatures in art.js, so a room's thumbnail
+  // orients and stacks its pieces exactly the way the real room does.
+  SN.surfaceAt = surfaceAt;
+  SN.stickerDepth = depthZ;
+  SN.ISO_DEG = ISO_DEG;
+
   function applyTransform(el, p) {
+    var surface = surfaceAt(p.x, p.y);
+    var onFloor = surface === 'floor';
+
+    // Sticker art is already drawn isometric, so a piece standing on the floor
+    // needs no shear — it's in the right projection as it is, and the flip
+    // handle turns it between the two floor axes. Wall pieces are drawn flat
+    // and front-on, so they get sheared into the plane of the wall they're on.
+    var skew = surface === 'wall-left' ? -ISO_DEG
+      : surface === 'wall-right' ? ISO_DEG
+        : 0;
+
     el.style.left = (p.x * 100) + '%';
     el.style.top = (p.y * 100) + '%';
     el.style.width = (p.size * 100) + '%';
-    el.style.zIndex = p.z;
-    el.style.transform = 'translate(-50%, -50%) rotate(' + p.rot + 'deg)';
-    el.querySelector('.sticker-art').style.transform = p.flip ? 'scaleX(-1)' : '';
+    el.style.zIndex = depthZ(p, surface);
+    el.style.transform = 'translate(-50%, -50%)';
+    el.classList.toggle('on-floor', onFloor);
+
+    // Plane shear outermost, so the piece is rotated in its own plane and
+    // only then laid onto the surface.
+    el.querySelector('.sticker-art').style.transform =
+      (skew ? 'skewY(' + skew.toFixed(3) + 'deg) ' : '') +
+      'rotate(' + p.rot + 'deg)' + (p.flip ? ' scaleX(-1)' : '');
   }
 
   function findPlacement(uid) {

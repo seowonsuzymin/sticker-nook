@@ -286,14 +286,25 @@
     var wp = wallPatternDef(theme, 'wpx-' + uid);
 
     var furniture = layout.slice()
-      .sort(function (a, b) { return a.z - b.z; })
+      .sort(function (a, b) {
+        return SN.stickerDepth(a, SN.surfaceAt(a.x, a.y)) -
+          SN.stickerDepth(b, SN.surfaceAt(b.x, b.y));
+      })
       .map(function (p) {
         var size = p.size * g.W;
         var cx = p.x * g.W, cy = p.y * g.H;
         var art = SN.stickerSVG(p.id).replace('<svg ',
           '<svg x="' + (cx - size / 2) + '" y="' + (cy - size / 2) + '" ' +
           'width="' + size + '" height="' + size + '" ');
-        var t = 'rotate(' + p.rot + ' ' + cx + ' ' + cy + ')' +
+
+        // Same plane shear the decorate view uses — wall pieces lie on the
+        // wall, floor pieces are already drawn isometric.
+        var surface = SN.surfaceAt(p.x, p.y);
+        var skew = surface === 'wall-left' ? -SN.ISO_DEG
+          : surface === 'wall-right' ? SN.ISO_DEG : 0;
+        var t = (skew ? 'translate(' + cx + ' ' + cy + ') skewY(' + skew.toFixed(3) +
+          ') translate(' + (-cx) + ' ' + (-cy) + ') ' : '') +
+          'rotate(' + p.rot + ' ' + cx + ' ' + cy + ')' +
           (p.flip ? ' translate(' + (2 * cx) + ' 0) scale(-1 1)' : '');
         return '<g transform="' + t + '">' + art + '</g>';
       }).join('');

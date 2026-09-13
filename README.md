@@ -37,13 +37,15 @@ Reset progress lives behind the ⚙ button, alongside a per-room "clear" and you
 index.html            page shell — HUD, room tabs, stage, tray, overlays
 css/style.css         all styling and the pastel design tokens
 js/
+  data/iso.js         isometric drawing kit: box, cyl, taper, ball, ring…
   data/stickers.js    the sticker catalog          ← add stickers here
   data/rooms.js       the room themes              ← add rooms here
   data/characters.js  playable characters          ← add characters here
   profiles.js         save slots: index, per-profile keys, outfit colours
   state.js            state shape + localStorage save/load/reset + event bus
   art.js              isometric room renderer, the girl character, avatars
-  room.js             placed stickers: drag, resize, rotate, flip, delete, z-order
+  room.js             placed stickers: drag, resize, rotate, flip, delete,
+                      surface detection, plane shear, depth sorting
   tray.js             sticker tray, category filters, purchase flow
   games/arcade.js     shared shell: HUD, countdown, timer, results, random picker
   games/catch.js      Sticker Catch              ← add mini-games alongside these
@@ -65,6 +67,31 @@ js/
 A save written before profiles existed (`stickerNook.save.v1`, no suffix) is
 migrated into the first slot on load rather than discarded.
 
+## How placed stickers sit in the room
+
+The room is drawn in orthographic isometric — no perspective, and both floor axes run at
+the same angle, `atan(135/460) ≈ 16.35°`. Placed stickers are fitted to that:
+
+- **Where it landed decides the surface.** `surfaceAt()` in `room.js` tests the drop point
+  against the two wall parallelograms; anything below them is floor. It's recomputed as you
+  drag, so moving a piece from the floor onto a wall re-orients it live.
+- **Wall pieces are sheared into the wall.** Posters, clocks, windows and garlands are drawn
+  flat and front-on, then `skewY(±16.35°)` lays them exactly in the plane of the wall they're
+  on. That's an affine shear, not a 3D rotation — a CSS `perspective()` would make them
+  converge and stop matching the room, which is drawn without any.
+- **Floor pieces need no shear** — their art is already isometric (see below). The flip
+  handle turns them between the two floor axes instead of just mirroring them.
+- **Floor pieces get a soft grounding shadow.** A circle on the floor projects to an
+  axis-aligned ellipse of exactly 135/460, so `.sticker-shadow` is that ratio, sitting on the
+  art's ground line.
+- **Overlap is resolved by depth, not by placement order.** `depthZ()` sorts on where a
+  piece's *base* sits, in three bands: walls behind the whole room, floor coverings under
+  anything standing on them, then standing pieces by depth. Drag something forward and it
+  comes forward.
+
+The hex-grid miniatures reuse the same `SN.surfaceAt` / `SN.stickerDepth`, so a room's
+thumbnail is arranged exactly like the room itself.
+
 ## Adding a sticker
 
 Append one entry to `STICKERS` in `js/data/stickers.js`. Nothing else needs to change —
@@ -77,14 +104,32 @@ the tray, categories, save file and shop all pick it up automatically.
   price: 70,                // 0 = owned from the start
   cat: 'decor',             // furniture | plush | plant | decor | food | tech
   size: 0.10,               // default width as a fraction of the room width
-  art: '<ellipse cx="50" cy="40" r="20" fill="' + C.pink + '"/>' + ...
+  flat: 1,                  // optional — floor coverings that others stand on
+  art: taper(50, G, 11, 8, 26, C.blue) + ball(50, 48, 13, C.pink)
 }
 ```
 
-`art` is SVG markup drawn inside a `viewBox="0 0 100 100"`. The dark outline stroke is
-inherited from the wrapper, so shapes only need a `fill` — use `stroke="none"` on small
-details you don't want outlined, and `fill="none"` on open paths. `C` is the shared pastel
-palette defined at the top of the file; sticking to it keeps everything looking like one set.
+`art` is SVG markup drawn inside a `viewBox="0 0 100 100"`, and the whole catalog follows
+one art direction:
+
+- **Isometric.** Build solids with the kit in `js/data/iso.js` — `box`, `cyl`, `taper`,
+  `ball`, `ring`, `disc`, plus `faceL`/`faceR` for detail on a box's visible sides — so
+  everything shares one axonometric angle and sits flush on the floor. Floor pieces stand on
+  the ground line `ISO.GY` (88) and face the right-hand floor axis.
+- **Exactly three tones per object.** `tones(base)` returns `[highlight, base, shadow]` from
+  one pastel colour; the solids apply them to top / base side / shadow side. No gradients,
+  no reflections.
+- **One 3px rounded dark outline**, inherited from the wrapper `<svg>` — so shapes only ever
+  set a `fill`. Use `stroke="none"` on interior shading and `fill="none"` on open paths.
+- **Chunky and simplified**: few parts, generous radii, muted pastels from `C` at the top of
+  the file.
+
+Wall pieces (posters, clocks, windows, garlands) are the exception — draw them flat and
+front-on, centred in the box. The room shears them onto the wall when they're dropped there.
+
+The isometric angle is one constant, `R` at the top of `js/data/iso.js`. It's set to the
+room's own floor slope so objects line up with it; raising it toward `0.577` gives a classic
+30° axonometric — more dramatic, but it stops matching the floor.
 
 ## The room grid
 
