@@ -968,7 +968,10 @@ body.is-dragging { cursor: grabbing; user-select: none; }
 
 .profile-screen {
   position: fixed; inset: 0;
-  display: grid; place-items: center;
+  display: grid;
+  /* Centred while the nooks fit, top-aligned and scrolling once they don't. */
+  align-content: safe center;
+  justify-items: center;
   overflow: auto;
   padding: 20px 14px;
   z-index: 400;
@@ -987,8 +990,19 @@ body.is-dragging { cursor: grabbing; user-select: none; }
 
 .ps-slots {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  /* Auto-fills the row, so the grid widens with the window and grows down
+     the page rather than being pinned to a fixed number of slots. */
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 14px;
+}
+.ps-count {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 1px 9px;
+  border-radius: 999px;
+  background: var(--pink-pale);
+  color: var(--pink-deep);
+  font-size: 12px; font-weight: 700;
 }
 
 .ps-slot {
@@ -1201,7 +1215,7 @@ body:has(#profileScreen:not([hidden])) .dev-coins { display: none; }
   .settings-stats { grid-template-columns: repeat(2, 1fr); }
   .toast { white-space: normal; max-width: 88vw; text-align: center; }
 
-  .ps-slots { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .ps-slots { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
   .ps-brand h1 { font-size: 24px; }
   .ps-brand .hud-logo { width: 36px; height: 36px; font-size: 18px; }
   .ps-sub { margin-bottom: 16px; }

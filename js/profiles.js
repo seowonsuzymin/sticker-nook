@@ -1,10 +1,16 @@
 /* ============================================================
    Save profiles
    ------------------------------------------------------------
-   Up to MAX independent save slots. An index of profiles lives at
-   `stickerNook.profiles.v1`; each profile's game state lives at its
-   own `stickerNook.save.v1.<profileId>` key, so slots never touch
-   each other.
+   As many independent save slots as people want. An index of profiles
+   lives at `stickerNook.profiles.v1`; each profile's game state lives
+   at its own `stickerNook.save.v1.<profileId>` key, so slots never
+   touch each other.
+
+   There's no slot limit — the only ceiling is the browser's storage
+   quota, and a save that can't be written is reported rather than
+   silently dropped. These are local slots on this browser: any number
+   of people can share the device, but nothing is shared between
+   devices and there are no accounts.
 
    A save from before profiles existed is migrated into slot one on
    first run rather than being thrown away.
@@ -15,9 +21,6 @@
   var INDEX_KEY = 'stickerNook.profiles.v1';
   var SAVE_PREFIX = 'stickerNook.save.v1.';
   var LEGACY_KEY = 'stickerNook.save.v1';       // the pre-profiles single save
-  var MAX = 3;
-
-  SN.MAX_PROFILES = MAX;
 
   /* The outfit colour picked per profile — this tints the character's
      dress in-game, so each nook is recognisable at a glance. */
@@ -68,7 +71,7 @@
 
   /* ── Index load / save ─────────────────────────────────── */
 
-  function saveIndex() { write(INDEX_KEY, index); }
+  function saveIndex() { return write(INDEX_KEY, index); }
 
   function byId(id) {
     for (var i = 0; i < index.profiles.length; i++) {
@@ -110,7 +113,6 @@
     if (raw && Array.isArray(raw.profiles)) {
       index.profiles = raw.profiles
         .filter(function (p) { return p && p.id; })
-        .slice(0, MAX)
         .map(function (p) {
           return {
             id: String(p.id),
@@ -133,7 +135,6 @@
 
   Profiles.all = function () { return index.profiles.slice(); };
   Profiles.count = function () { return index.profiles.length; };
-  Profiles.isFull = function () { return index.profiles.length >= MAX; };
   Profiles.get = function (id) { return byId(id); };
   Profiles.activeId = function () { return index.activeId; };
   Profiles.active = function () { return index.activeId ? byId(index.activeId) : null; };
@@ -167,8 +168,11 @@
 
   /* ── Writing ───────────────────────────────────────────── */
 
+  /**
+   * Returns the new profile, or null if the browser refused to store it —
+   * the only real limit on how many nooks can exist.
+   */
   Profiles.create = function (name, colorId, characterId) {
-    if (Profiles.isFull()) return null;
     var p = {
       id: uid(),
       name: cleanName(name),
@@ -178,7 +182,10 @@
       lastPlayed: 0
     };
     index.profiles.push(p);
-    saveIndex();
+    if (!saveIndex()) {
+      index.profiles.pop();                      // don't keep a nook we can't save
+      return null;
+    }
     return p;
   };
 

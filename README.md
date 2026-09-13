@@ -8,16 +8,24 @@ prefer: `python3 -m http.server` then open `localhost:8000`.)
 
 ## Save profiles
 
-The game opens on a picker with **3 save slots**. Each nook is completely
-independent — its own coins, unlocked stickers, unlocked rooms and per-room
-layouts — so you can start over in a fresh slot without touching an existing one.
+The game opens on a picker of nooks, with a **+ tile to add another — there's no
+limit**, so a whole family or classroom can share one browser, a nook each. Each
+nook is completely independent — its own coins, unlocked stickers, rooms and
+per-room layouts — so you can start over in a fresh one without touching any
+existing save.
+
+These are local slots in this browser. Any number of people can play on the same
+device, but nothing travels between devices and there are no accounts or logins.
+The only ceiling is the browser's storage quota; if it's ever reached, the picker
+says so rather than silently losing a nook.
 
 When you make a nook you pick a **character** (Girl, Bear, Cat, Puppy, Bunny or
 Panda) and an **outfit colour**. Your character sits in the room wearing that
 colour and appears on the save-slot card, so your nooks are easy to tell apart.
 
 Switch nooks any time via ⚙ → **Switch nook**. "Reset progress" only wipes the nook
-you're currently in. Deleting a nook from the picker removes just that slot's save.
+you're currently in. Deleting a nook from the picker removes just that slot's save
+(`stickerNook.save.v1.<profileId>`) and leaves every other nook alone.
 
 ## The loop
 

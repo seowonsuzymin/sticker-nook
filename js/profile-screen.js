@@ -4,7 +4,7 @@
 (function (SN) {
   'use strict';
 
-  var screenEl, slotsEl, dlgEl, nameEl, colorsEl, charsEl;
+  var screenEl, slotsEl, countEl, dlgEl, nameEl, colorsEl, charsEl;
   var pendingColor = 'pink';
   var pendingChar = 'girl';
 
@@ -13,6 +13,7 @@
   PS.init = function () {
     screenEl = document.getElementById('profileScreen');
     slotsEl = document.getElementById('psSlots');
+    countEl = document.getElementById('psCount');
     dlgEl = document.getElementById('newProfileOverlay');
     nameEl = document.getElementById('npName');
     colorsEl = document.getElementById('npColors');
@@ -30,8 +31,11 @@
   };
 
   PS.show = function () {
+    // The picker sits above everything, so it takes down both game screens
+    // itself rather than trusting the caller to have done it.
     screenEl.hidden = false;
     document.getElementById('app').hidden = true;
+    document.getElementById('roomSelect').hidden = true;
     PS.render();
   };
 
@@ -44,10 +48,13 @@
 
   PS.render = function () {
     var profiles = SN.Profiles.all();
-    var cards = profiles.map(filledCard);
-
-    for (var i = profiles.length; i < SN.MAX_PROFILES; i++) cards.push(emptyCard());
-    slotsEl.innerHTML = cards.join('');
+    // Every nook, then a single tile to add one more — there's no slot limit.
+    slotsEl.innerHTML = profiles.map(filledCard).join('') + emptyCard();
+    if (countEl) {
+      countEl.textContent = profiles.length
+        ? profiles.length + (profiles.length === 1 ? ' nook' : ' nooks')
+        : '';
+    }
 
     slotsEl.querySelectorAll('.ps-slot.is-filled').forEach(function (el) {
       el.addEventListener('click', function () { SN.enterGame(el.dataset.id); });
@@ -95,7 +102,7 @@
   /* ── New-profile dialog ────────────────────────────────── */
 
   function openDialog() {
-    var n = SN.Profiles.count();
+    var n = SN.Profiles.count();   // wraps, so nook six starts the palette again
     pendingColor = SN.PROFILE_COLORS[n % SN.PROFILE_COLORS.length].id;
     pendingChar = SN.CHARACTERS[n % SN.CHARACTERS.length].id;
     nameEl.value = '';
@@ -142,7 +149,15 @@
 
   function createFromDialog() {
     var p = SN.Profiles.create(nameEl.value, pendingColor, pendingChar);
-    if (!p) return;
+    if (!p) {
+      closeDialog();
+      SN.UI.modal({
+        title: 'No room to save',
+        body: 'This browser won\'t store another nook — its storage is full. ' +
+          'Deleting a nook you\'ve finished with will make space for a new one.'
+      });
+      return;
+    }
     closeDialog();
     SN.enterGame(p.id);
   }
