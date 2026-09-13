@@ -22,8 +22,9 @@ you're currently in. Deleting a nook from the picker removes just that slot's sa
 ## The loop
 
 1. Pick a room from the hex grid, then decorate it: drag stickers from the tray into the
-   isometric room, corner handles to resize / rotate / flip, ✕ to delete. `Delete` and `Esc`
-   work on the selected sticker too. The ← button goes back to the grid.
+   isometric room, corner handles to resize / rotate / flip, the top handle to push a piece
+   in front of or behind the others, ✕ to delete. `Delete` and `Esc` work on the selected
+   sticker too. The ← button goes back to the grid.
 2. Most stickers and rooms are locked behind coins.
 3. Coins come only from the mini-games. **"Earn Coins" deals you one at random** (never the
    same one twice in a row) — see below.
@@ -85,9 +86,14 @@ the same angle, `atan(135/460) ≈ 16.35°`. Placed stickers are fitted to that:
   axis-aligned ellipse of exactly 135/460, so `.sticker-shadow` is that ratio, sitting on the
   art's ground line.
 - **Overlap is resolved by depth, not by placement order.** `depthZ()` sorts on where a
-  piece's *base* sits, in three bands: walls behind the whole room, floor coverings under
+  piece's *base* sits, within bands: walls behind the whole room, floor coverings under
   anything standing on them, then standing pieces by depth. Drag something forward and it
-  comes forward.
+  comes forward. The bands are spaced wider than the depth range, so one can never bleed
+  into the next.
+- **The ⧉ handle overrides that when you want it to.** It cycles a piece through three
+  modes — in front of everything, behind everything, then back to automatic — tinting pink
+  or blue while it's overridden. It's stored as `layer` on the placement (`1` / `-1` / `0`)
+  and saved, so a piece stays where you put it even after you drag it somewhere else.
 
 The hex-grid miniatures reuse the same `SN.surfaceAt` / `SN.stickerDepth`, so a room's
 thumbnail is arranged exactly like the room itself.

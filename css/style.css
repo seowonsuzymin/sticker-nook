@@ -462,6 +462,13 @@ body.is-dragging { cursor: grabbing; user-select: none; }
 .s-flip  { right: 0; top: 0;    transform: translate(50%, -50%); }
 .s-rot   { left: 0;  bottom: 0; transform: translate(-50%, 50%); cursor: grab; }
 .s-size  { right: 0; bottom: 0; transform: translate(50%, 50%);  cursor: nwse-resize; }
+.s-layer { left: 50%; top: 0;   transform: translate(-50%, -50%); }
+.s-layer svg { width: 15px; height: 15px; display: block; }
+.s-layer svg rect { fill: var(--card); stroke: var(--ink); stroke-width: 2.2; }
+.s-layer.is-front { background: var(--pink-pale); }
+.s-layer.is-front .s-layer-front { fill: var(--pink); }
+.s-layer.is-back  { background: #e3ecfb; }
+.s-layer.is-back  .s-layer-back  { fill: #9cc4ec; }
 
 .sticker.is-popping { animation: sticker-pop .3s cubic-bezier(.3, 1.6, .5, 1); }
 @keyframes sticker-pop { from { opacity: 0; } }

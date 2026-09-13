@@ -174,6 +174,7 @@
               size: clamp(num(p.size, 0.15), 0.03, 0.7),
               rot: num(p.rot, 0),
               flip: p.flip ? 1 : 0,
+              layer: p.layer > 0 ? 1 : p.layer < 0 ? -1 : 0,
               z: Number(p.z) || i + 1
             };
           });

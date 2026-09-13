@@ -81,6 +81,11 @@
       '<div class="sticker-shadow"></div>' +
       '<div class="sticker-art">' + SN.stickerSVG(p.id) + '</div>' +
       '<div class="sticker-frame">' +
+      '<button class="s-handle s-layer" aria-label="Change stacking order">' +
+      '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+      '<rect class="s-layer-back"  x="3.5" y="3.5" width="13" height="13" rx="3.5"/>' +
+      '<rect class="s-layer-front" x="7.5" y="7.5" width="13" height="13" rx="3.5"/>' +
+      '</svg></button>' +
       '<button class="s-handle s-del"    title="Delete"      aria-label="Delete sticker">✕</button>' +
       '<button class="s-handle s-flip"   title="Flip"        aria-label="Flip sticker">⇄</button>' +
       '<div    class="s-handle s-rot"    title="Rotate"      aria-label="Rotate sticker">⟳</div>' +
@@ -120,17 +125,31 @@
    * Sticker art stands on the ground line ISO.GY rather than the bottom of its
    * box, so the base is that far below the centre.
    *
-   * Three bands keep the obvious cases right regardless of depth: walls are
-   * behind the whole room, floor coverings lie under everything standing on
-   * them, and standing pieces sort against each other by depth.
+   * Pieces fall into bands, and sort by depth within their band. Walls sit
+   * behind the whole room and floor coverings under everything standing on
+   * them; the stacking button can lift a piece clear of the lot or tuck it
+   * under. Bands are spaced wider than the depth range so one can never bleed
+   * into the next.
    */
+  var BAND = { back: 1000, wall: 4000, flat: 7000, stand: 10000, front: 14000 };
+
   function depthZ(p, surface) {
     var drop = (SN.ISO.GY / 100 - 0.5) * (SN.GEO.W / SN.GEO.H);
     var base = p.y + p.size * drop;
-    if (surface !== 'floor') return 100 + Math.round(base * 100);
-    var st = SN.STICKER_BY_ID[p.id];
-    return (st && st.flat ? 300 : 1000) + Math.round(base * 2000);
+    var band = p.layer > 0 ? BAND.front
+      : p.layer < 0 ? BAND.back
+        : surface !== 'floor' ? BAND.wall
+          : (SN.STICKER_BY_ID[p.id] || {}).flat ? BAND.flat : BAND.stand;
+    return band + Math.round(base * 1000);
   }
+
+  /** front → behind → automatic, and round again. */
+  var LAYER_MODES = [
+    { v: 0, cls: '', title: 'Automatic order — tap to bring to the front', toast: '↕ Back to automatic order.' },
+    { v: 1, cls: 'is-front', title: 'In front of everything — tap to send behind', toast: '⬆ Brought to the front.' },
+    { v: -1, cls: 'is-back', title: 'Behind everything — tap for automatic order', toast: '⬇ Sent to the back.' }
+  ];
+  function layerMode(p) { return LAYER_MODES[p.layer > 0 ? 1 : p.layer < 0 ? 2 : 0]; }
 
   // Shared with the hex-grid miniatures in art.js, so a room's thumbnail
   // orients and stacks its pieces exactly the way the real room does.
@@ -156,6 +175,11 @@
     el.style.zIndex = depthZ(p, surface);
     el.style.transform = 'translate(-50%, -50%)';
     el.classList.toggle('on-floor', onFloor);
+
+    var mode = layerMode(p), btn = el.querySelector('.s-layer');
+    btn.classList.toggle('is-front', mode.cls === 'is-front');
+    btn.classList.toggle('is-back', mode.cls === 'is-back');
+    btn.title = mode.title;
 
     // Plane shear outermost, so the piece is rotated in its own plane and
     // only then laid onto the surface.
@@ -224,6 +248,7 @@
       size: def.size,
       rot: 0,
       flip: 0,
+      layer: 0,
       z: topZ() + 1
     };
     SN.currentLayout().push(p);
@@ -259,8 +284,7 @@
       if (!live) return;
 
       Room.select(live.uid);
-      live.z = topZ() + 1;
-      el.style.zIndex = live.z;
+      applyTransform(el, live);
 
       var r = stageRect();
       var grabDX = live.x - (e.clientX - r.left) / r.width;
@@ -331,6 +355,18 @@
       live.flip = live.flip ? 0 : 1;
       applyTransform(el, live);
       SN.save();
+    });
+
+    el.querySelector('.s-layer').addEventListener('pointerdown', stopIt);
+    el.querySelector('.s-layer').addEventListener('click', function (e) {
+      e.stopPropagation();
+      var live = findPlacement(p.uid);
+      if (!live) return;
+      var next = LAYER_MODES[(LAYER_MODES.indexOf(layerMode(live)) + 1) % LAYER_MODES.length];
+      live.layer = next.v;
+      applyTransform(el, live);
+      SN.save();
+      SN.UI.toast(next.toast);
     });
 
     el.querySelector('.s-del').addEventListener('pointerdown', stopIt);
