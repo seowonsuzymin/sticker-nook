@@ -18,8 +18,21 @@
       <span class="hud-logo">✿</span>
       <h1>Sticker Nook</h1>
     </div>
-    <p class="ps-sub">Choose a nook to decorate <span class="ps-count" id="psCount"></span></p>
-    <div class="ps-slots" id="psSlots"></div>
+    <p class="ps-sub">Choose a nook to decorate</p>
+
+    <div class="ps-bar">
+      <span class="ps-count" id="psCount"></span>
+      <button class="ps-add" id="psAdd" title="Add a player" aria-label="Add a player">+</button>
+    </div>
+
+    <div class="ps-carousel">
+      <button class="ps-nav ps-prev" id="psPrev" aria-label="Previous nooks">‹</button>
+      <div class="ps-viewport" id="psViewport">
+        <div class="ps-slots" id="psSlots"></div>
+      </div>
+      <button class="ps-nav ps-next" id="psNext" aria-label="More nooks">›</button>
+    </div>
+
     <p class="ps-foot">Each nook keeps its own coins, stickers, rooms and layouts —
       add as many as you like, one per player.</p>
   </div>

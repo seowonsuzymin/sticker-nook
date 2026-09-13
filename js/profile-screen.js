@@ -4,7 +4,8 @@
 (function (SN) {
   'use strict';
 
-  var screenEl, slotsEl, countEl, dlgEl, nameEl, colorsEl, charsEl;
+  var screenEl, slotsEl, countEl, viewEl, prevEl, nextEl;
+  var dlgEl, nameEl, colorsEl, charsEl;
   var pendingColor = 'pink';
   var pendingChar = 'girl';
 
@@ -14,6 +15,15 @@
     screenEl = document.getElementById('profileScreen');
     slotsEl = document.getElementById('psSlots');
     countEl = document.getElementById('psCount');
+    viewEl = document.getElementById('psViewport');
+    prevEl = document.getElementById('psPrev');
+    nextEl = document.getElementById('psNext');
+
+    document.getElementById('psAdd').addEventListener('click', openDialog);
+    prevEl.addEventListener('click', function () { page(-1); });
+    nextEl.addEventListener('click', function () { page(1); });
+    viewEl.addEventListener('scroll', syncNav);
+    window.addEventListener('resize', syncNav);
     dlgEl = document.getElementById('newProfileOverlay');
     nameEl = document.getElementById('npName');
     colorsEl = document.getElementById('npColors');
@@ -48,8 +58,10 @@
 
   PS.render = function () {
     var profiles = SN.Profiles.all();
-    // Every nook, then a single tile to add one more — there's no slot limit.
-    slotsEl.innerHTML = profiles.map(filledCard).join('') + emptyCard();
+    // Three cards fit at a time; past that the row slides. Adding a nook is
+    // the circle above the row, so no tile is needed here — except on a first
+    // run, where an empty row would leave nothing to aim at.
+    slotsEl.innerHTML = profiles.length ? profiles.map(filledCard).join('') : emptyCard();
     if (countEl) {
       countEl.textContent = profiles.length
         ? profiles.length + (profiles.length === 1 ? ' nook' : ' nooks')
@@ -66,7 +78,33 @@
     slotsEl.querySelectorAll('.ps-slot.is-empty').forEach(function (el) {
       el.addEventListener('click', openDialog);
     });
+
+    viewEl.scrollLeft = 0;
+    syncNav();
   };
+
+  /* ── Sliding ───────────────────────────────────────────── */
+
+  // Sub-pixel slack, so a snap landing a hair off an end still reads as an end.
+  var EDGE_SLOP = 2;
+
+  /** One card per press, so a long row can be stepped through precisely. */
+  function page(dir) {
+    var card = slotsEl.querySelector('.ps-slot');
+    if (!card) return;
+    var gap = parseFloat(getComputedStyle(slotsEl).columnGap) || 0;
+    viewEl.scrollBy({ left: dir * (card.offsetWidth + gap), behavior: 'smooth' });
+  }
+
+  /** Grey out an arrow with nowhere left to go — including when all the
+      nooks already fit, which is every row of three or fewer. */
+  function syncNav() {
+    if (!viewEl) return;
+    var max = viewEl.scrollWidth - viewEl.clientWidth;
+    var at = viewEl.scrollLeft;
+    prevEl.disabled = at <= EDGE_SLOP;
+    nextEl.disabled = at >= max - EDGE_SLOP;
+  }
 
   function filledCard(p) {
     var c = SN.Profiles.colorFor(p.color);

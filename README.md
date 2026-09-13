@@ -8,8 +8,12 @@ prefer: `python3 -m http.server` then open `localhost:8000`.)
 
 ## Save profiles
 
-The game opens on a picker of nooks, with a **+ tile to add another — there's no
-limit**, so a whole family or classroom can share one browser, a nook each. Each
+The game opens on a picker of nooks. It shows **three at a time in a horizontal
+slider**, with ‹ › arrows either side and a **+ circle at the top right to add
+another — there's no limit**, so a whole family or classroom can share one
+browser, a nook each. The arrows step one card at a time and grey out at the
+ends; the row also swipes and scrolls natively, and a first run shows a single
+wide prompt instead of an empty slider. Each
 nook is completely independent — its own coins, unlocked stickers, rooms and
 per-room layouts — so you can start over in a fresh one without touching any
 existing save.
