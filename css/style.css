@@ -428,6 +428,12 @@ body.is-dragging { cursor: grabbing; user-select: none; }
 /* While a piece is selected it comes to the top, so its handles stay
    reachable even when something nearer is drawn over it. */
 .sticker.is-selected { z-index: 99999 !important; }
+
+/* A shelved piece takes its size, angle and facing from the shelf holding
+   it, so those handles would be no-ops. Drag it off to get them back. */
+.sticker.is-shelved .s-size,
+.sticker.is-shelved .s-rot,
+.sticker.is-shelved .s-flip { display: none; }
 .sticker-art svg {
   width: 100%; height: 100%; display: block;
   filter: drop-shadow(0 3px 3px rgba(74, 59, 82, .2));

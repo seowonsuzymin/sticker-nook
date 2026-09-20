@@ -115,6 +115,28 @@ the same angle, `atan(135/460) ≈ 16.35°`. Placed stickers are fitted to that:
 The hex-grid miniatures reuse the same `SN.surfaceAt` / `SN.stickerDepth`, so a room's
 thumbnail is arranged exactly like the room itself.
 
+## Shelves
+
+The bookshelf ships **empty**. Drop a book set on it and the books settle into
+the nearest free shelf, sized and squared to it; drop one anywhere else and it
+stays an ordinary sticker you can put on a table or the floor.
+
+A shelved piece keeps **no position of its own** — `on` names its host and `slot`
+which shelf, and everything else is derived from the host. So books follow their
+bookshelf when it's moved, resized, turned or flipped, with nothing to keep in
+sync. Their size and resize/rotate/flip handles are hidden while they're shelved,
+since the shelf decides those; drag one off to get them back. Deleting a
+bookshelf leaves its books in the room where they were rather than taking them
+with it.
+
+Any sticker can become a shelf or a shelvable, with four fields — a host declares
+`shelves` (slot anchor points in its own 100-box) and `shelfSpan` (how wide a slot
+is); a guest declares `shelvable`, `anchor` (the point on its art that meets the
+shelf line) and `span` (how wide its art is). A guest is scaled by
+`shelfSpan / span`, so any set fits any slot. Stacking is handled too: a shelved
+piece rides its host's depth rather than sorting on its own, or the shelf — whose
+base is nearer the viewer — would paint over its own books.
+
 ## Adding a sticker
 
 Append one entry to `STICKERS` in `js/data/stickers.js`. Nothing else needs to change —

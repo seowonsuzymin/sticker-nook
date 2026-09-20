@@ -134,6 +134,13 @@
   var BAND = { back: 1000, wall: 4000, flat: 7000, stand: 10000, front: 14000 };
 
   function depthZ(p, surface) {
+    // Books belong to their shelf, so they ride its depth rather than
+    // sorting on their own — otherwise a shelf would paint over its books,
+    // its base being nearer the viewer than theirs.
+    if (p.on != null && !p.layer) {
+      var host = findPlacement(p.on);
+      if (host) return depthZ(host, surfaceAt(host.x, host.y)) + 1 + (p.slot || 0);
+    }
     var drop = (SN.ISO.GY / 100 - 0.5) * (SN.GEO.W / SN.GEO.H);
     var base = p.y + p.size * drop;
     var band = p.layer > 0 ? BAND.front
@@ -141,6 +148,106 @@
         : surface !== 'floor' ? BAND.wall
           : (SN.STICKER_BY_ID[p.id] || {}).flat ? BAND.flat : BAND.stand;
     return band + Math.round(base * 1000);
+  }
+
+  /* ── Shelving ──────────────────────────────────────────────
+     A shelved piece keeps no position of its own: `on` names its host and
+     `slot` which shelf. Everything else is derived, so books follow their
+     bookshelf when it's moved, resized, turned or flipped. */
+
+  function aspect() { return SN.GEO.W / SN.GEO.H; }
+
+  /** A point in a placement's own 100-box → stage fractions. */
+  function fromLocal(host, lx, ly) {
+    var ox = (host.flip ? 100 - lx : lx) - 50, oy = ly - 50;
+    var a = host.rot * Math.PI / 180, c = Math.cos(a), s = Math.sin(a);
+    return {
+      x: host.x + (ox * c - oy * s) / 100 * host.size,
+      y: host.y + (ox * s + oy * c) / 100 * host.size * aspect()
+    };
+  }
+
+  /** Stage fractions → a point in a placement's own 100-box. */
+  function toLocal(host, x, y) {
+    var dx = (x - host.x) / host.size * 100;
+    var dy = (y - host.y) / (host.size * aspect()) * 100;
+    var a = -host.rot * Math.PI / 180, c = Math.cos(a), s = Math.sin(a);
+    var lx = dx * c - dy * s + 50, ly = dx * s + dy * c + 50;
+    return { x: host.flip ? 100 - lx : lx, y: ly };
+  }
+
+  /**
+   * Where a placement is actually drawn. For a shelved piece that's its
+   * host's slot; for everything else it's the placement itself. Falls back
+   * to the stored position if the host has gone.
+   */
+  function resolved(p) {
+    if (p.on == null) return p;
+    var host = findPlacement(p.on);
+    var hd = host && SN.STICKER_BY_ID[host.id];
+    var gd = SN.STICKER_BY_ID[p.id];
+    var slot = hd && hd.shelves && hd.shelves[p.slot];
+    if (!slot || !gd || !gd.anchor) return p;
+
+    var scale = hd.shelfSpan / gd.span;                 // guest box / host box
+    var at = fromLocal(host,
+      slot[0] - (gd.anchor[0] - 50) * scale,
+      slot[1] - (gd.anchor[1] - 50) * scale);
+
+    return {
+      uid: p.uid, id: p.id, on: p.on, slot: p.slot, layer: p.layer, z: p.z,
+      x: at.x, y: at.y, size: host.size * scale, rot: host.rot, flip: host.flip
+    };
+  }
+
+  /** Is this slot already taken by something other than `self`? */
+  function slotTaken(hostUid, slot, self) {
+    return SN.currentLayout().some(function (q) {
+      return q.uid !== self && q.on === hostUid && q.slot === slot;
+    });
+  }
+
+  /**
+   * The free slot nearest to where a shelvable piece was dropped, or null.
+   * Only slots on a host the drop actually landed inside are considered.
+   */
+  function slotUnder(p, x, y) {
+    var gd = SN.STICKER_BY_ID[p.id];
+    if (!gd || !gd.shelvable) return null;
+
+    var best = null;
+    SN.currentLayout().forEach(function (h) {
+      if (h.uid === p.uid || h.on != null) return;
+      var hd = SN.STICKER_BY_ID[h.id];
+      if (!hd || !hd.shelves) return;
+
+      var l = toLocal(h, x, y);
+      if (l.x < 0 || l.x > 100 || l.y < 0 || l.y > 100) return;
+
+      hd.shelves.forEach(function (sl, i) {
+        if (slotTaken(h.uid, i, p.uid)) return;
+        var d = Math.hypot(l.x - sl[0], l.y - sl[1]);
+        if (!best || d < best.d) best = { uid: h.uid, slot: i, d: d };
+      });
+    });
+    return best;
+  }
+
+  /** Settle a piece into a shelf if it was dropped on one. */
+  function trySnap(live) {
+    var hit = slotUnder(live, live.x, live.y);
+    if (!hit) return false;
+    live.on = hit.uid;
+    live.slot = hit.slot;
+    return true;
+  }
+
+  /** Lift a piece off its shelf, leaving it where it visually was. */
+  function unshelve(live) {
+    if (live.on == null) return;
+    var r = resolved(live);
+    live.x = r.x; live.y = r.y; live.size = r.size; live.rot = r.rot;
+    live.on = null; live.slot = 0;
   }
 
   /** front → behind → automatic, and round again. */
@@ -157,7 +264,8 @@
   SN.stickerDepth = depthZ;
   SN.ISO_DEG = ISO_DEG;
 
-  function applyTransform(el, p) {
+  function applyTransform(el, placement) {
+    var p = resolved(placement);
     var surface = surfaceAt(p.x, p.y);
     var onFloor = surface === 'floor';
 
@@ -175,8 +283,9 @@
     el.style.zIndex = depthZ(p, surface);
     el.style.transform = 'translate(-50%, -50%)';
     el.classList.toggle('on-floor', onFloor);
+    el.classList.toggle('is-shelved', placement.on != null);
 
-    var mode = layerMode(p), btn = el.querySelector('.s-layer');
+    var mode = layerMode(placement), btn = el.querySelector('.s-layer');
     btn.classList.toggle('is-front', mode.cls === 'is-front');
     btn.classList.toggle('is-back', mode.cls === 'is-back');
     btn.title = mode.title;
@@ -215,6 +324,8 @@
     var list = SN.currentLayout();
     var i = list.findIndex(function (p) { return p.uid === uid; });
     if (i === -1) return;
+    // anything shelved here keeps its spot in the room instead of vanishing
+    list.forEach(function (q) { if (q.on === uid) unshelve(q); });
     var el = elFor(uid);
     list.splice(i, 1);
     if (selectedUid === uid) selectedUid = null;
@@ -249,8 +360,11 @@
       rot: 0,
       flip: 0,
       layer: 0,
+      on: null,
+      slot: 0,
       z: topZ() + 1
     };
+    trySnap(p);
     SN.currentLayout().push(p);
     var el = buildStickerEl(p);
     el.classList.add('is-popping');
@@ -287,18 +401,23 @@
       applyTransform(el, live);
 
       var r = stageRect();
-      var grabDX = live.x - (e.clientX - r.left) / r.width;
-      var grabDY = live.y - (e.clientY - r.top) / r.height;
+      var from = resolved(live);          // a shelved piece drags from where it looks
+      var grabDX = from.x - (e.clientX - r.left) / r.width;
+      var grabDY = from.y - (e.clientY - r.top) / r.height;
       var moved = false;
 
       drag(el, e, function (ev) {
+        if (!moved) unshelve(live);       // a tap selects; only a drag lifts it off
+        moved = true;
         var rr = stageRect();
         live.x = SN.clamp((ev.clientX - rr.left) / rr.width + grabDX, EDGE, 1 - EDGE);
         live.y = SN.clamp((ev.clientY - rr.top) / rr.height + grabDY, EDGE, 1 - EDGE);
         applyTransform(el, live);
-        moved = true;
       }, function () {
-        if (moved) SN.save();
+        if (!moved) return;
+        trySnap(live);
+        applyTransform(el, live);
+        SN.save();
       });
     });
 
@@ -310,9 +429,10 @@
       if (!live) return;
 
       var r = stageRect();
-      var c = centerPx(live, r);
+      var from = resolved(live);
+      var c = centerPx(from, r);
       var startDist = Math.hypot(e.clientX - c.x, e.clientY - c.y) || 1;
-      var startSize = live.size;
+      var startSize = from.size;
 
       drag(el, e, function (ev) {
         var rr = stageRect();
@@ -331,9 +451,10 @@
       if (!live) return;
 
       var r = stageRect();
-      var c = centerPx(live, r);
+      var from = resolved(live);
+      var c = centerPx(from, r);
       var startAngle = Math.atan2(e.clientY - c.y, e.clientX - c.x);
-      var startRot = live.rot;
+      var startRot = from.rot;
 
       drag(el, e, function (ev) {
         var rr = stageRect();

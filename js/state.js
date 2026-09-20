@@ -175,6 +175,8 @@
               rot: num(p.rot, 0),
               flip: p.flip ? 1 : 0,
               layer: p.layer > 0 ? 1 : p.layer < 0 ? -1 : 0,
+              on: p.on == null ? null : Number(p.on),
+              slot: Math.max(0, Number(p.slot) || 0),
               z: Number(p.z) || i + 1
             };
           });

@@ -14,6 +14,15 @@
      size   default width as a fraction of the room's width (0.02–0.6)
      flat   optional; set 1 on floor coverings (rugs, mats) so they always
             sort beneath anything standing on them
+
+   Shelves — a piece can hold other pieces:
+     shelves    on a host: [[x, y], …] mid-points, in the host's own 100-box,
+                of each slot's standing line
+     shelfSpan  on a host: how wide a slot is, in the host's 100-box
+     shelvable  on a guest: 1 if it can drop into a slot
+     anchor     on a guest: [x, y] the point on its art that meets the slot
+     span       on a guest: how wide its art is, in its own 100-box
+   A guest's size is scaled by shelfSpan / span, so it always fits.
      art    SVG markup drawn inside a `viewBox="0 0 100 100"`.
 
    Art direction — everything in the catalog follows this:
@@ -247,14 +256,16 @@
     },
     {
       id: 'bookshelf', name: 'Bookshelf', price: 90, cat: 'furniture', size: 0.20,
+      // Three evenly spaced boards, left bare — drop a book set on one to
+      // fill it. `shelves` are the mid-points of each shelf's standing line
+      // and `shelfSpan` how much of it a set covers; see "Shelves" below.
+      shelves: [[43, 84.7], [43, 69.8], [43, 54.9]],
+      shelfSpan: 26,
       art:
         box(50, 86, 17, 7, 50, C.brown) +
         faceL([29, 80.9], 28, 42, T(C.brown)[2]) +
-        faceL([29, 66.9], 28, 2.6, T(C.brown)[0]) +
-        faceL([29, 52.9], 28, 2.6, T(C.brown)[0]) +
-        books(30.5, 81.3, [[C.red, 13], [C.blue, 11], [C.yellow, 12.5], [C.mint, 10], [C.lav, 12]]) +
-        books(30.5, 64.7, [[C.pink, 10], [C.yellow, 8.5], [C.blue, 10.5], [C.red, 9]]) +
-        books(30.5, 50.7, [[C.mint, 9.5], [C.lav, 11], [C.pink, 8.5], [C.blue, 10]])
+        faceL([29, 68.6], 28, 2.6, T(C.brown)[0]) +
+        faceL([29, 53.7], 28, 2.6, T(C.brown)[0])
     },
     {
       id: 'beanbag', name: 'Bean Bag', price: 75, cat: 'furniture', size: 0.16,
@@ -502,6 +513,28 @@
         slab(50, 85, 13, 9.5, T(C.gray)[0]) +
         ink('M44 85 l8 2.4 M48 82 l8 2.4 M40 88 l8 2.4', 1.8)
     },
+    /* ── Book sets ─────────────────────────────────────────────
+       Drawn as an isometric row so they sit straight on a shelf. All three
+       share the same `anchor` and `span`, so any set drops into any slot. */
+    {
+      id: 'books-row', name: 'Book Row', price: 35, cat: 'decor', size: 0.09,
+      shelvable: 1, anchor: [49.1, 76], span: 68.2,
+      art: books(15, 66, [[C.red, 30], [C.blue, 26], [C.yellow, 29], [C.mint, 24], [C.lav, 28]], 13)
+    },
+    {
+      id: 'books-pastel', name: 'Pastel Books', price: 40, cat: 'decor', size: 0.09,
+      shelvable: 1, anchor: [49.1, 76], span: 68.2,
+      art: books(15, 66, [[C.pink, 27], [C.mint, 31], [C.lav, 25], [C.blue, 29], [C.peach, 26]], 13)
+    },
+    {
+      id: 'books-leaning', name: 'Leaning Books', price: 45, cat: 'decor', size: 0.09,
+      shelvable: 1, anchor: [49.1, 76], span: 68.2,
+      // no brown spines — they vanish against the shelf they sit on
+      art: books(15, 66, [[C.blue, 29], [C.green, 25], [C.red, 30], [C.mint, 24]], 13) +
+        // the last one tipped back against its neighbours, pivoting on its foot
+        '<g transform="rotate(-10 70 82.1)">' + books(70, 82.1, [[C.yellow, 25]], 13) + '</g>'
+    },
+
     /* ── Friends ───────────────────────────────────────────── */
     {
       id: 'friend-fox', name: 'Fox', price: 90, cat: 'friend', size: 0.13,
