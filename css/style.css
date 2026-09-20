@@ -336,6 +336,12 @@ body.is-dragging { cursor: grabbing; user-select: none; }
 
 .stage {
   position: relative;
+  /* Stickers carry large z-indexes — depth bands into the thousands, and
+     99999 while selected. Without a stacking context here those compete in
+     the root context and paint over the modals, toasts and drag ghost, which
+     sit far lower. Isolating the stage keeps sticker depth a private matter
+     between stickers. */
+  isolation: isolate;
   height: 100%;
   aspect-ratio: 1000 / 760;
   max-width: 100%;
