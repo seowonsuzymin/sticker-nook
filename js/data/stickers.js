@@ -7,7 +7,10 @@
             an existing one or players lose that sticker)
      name   display name in the tray
      price  cost in coins (0 = owned from the start)
-     cat    category chip: furniture | plush | plant | food | decor | tech
+     cat    category chip: friend | furniture | plush | plant | food | decor | tech
+            ('friend' is the standing character cast — separate from the
+             profile characters in js/data/characters.js, which are avatars
+             only and never appear in a room)
      size   default width as a fraction of the room's width (0.02–0.6)
      flat   optional; set 1 on floor coverings (rugs, mats) so they always
             sort beneath anything standing on them
@@ -44,6 +47,7 @@
     green: '#8fd99f', greenD: '#5fb87a',
     red: '#ff8f8f', redD: '#e96b6b',
     gray: '#ded7e6', grayD: '#b8aec6',
+    slate: '#9aa8c4',
     dark: '#6b5a78'
   };
   SN.PALETTE = C;
@@ -74,6 +78,39 @@
       ' A' + n(rx * 1.45) + ' ' + n(ry * 1.45) + ' 0 0 0 ' + n(s[0]) + ' ' + n(s[1]) +
       ' Z" fill="' + t[2] + '" stroke="none"/>' +
       ell(cx - rx * 0.42, cy - ry * 0.46, rx * 0.26, ry * 0.2, t[0]) .replace('/>', ' stroke="none"/>');
+  }
+
+  /* ── Friends ────────────────────────────────────────────
+     A separate cast from the profile characters: these are stickers you buy
+     and place, drawn standing rather than sitting. They share one body so
+     they read as a set, exactly like the profile characters share theirs. */
+
+  /** Blinking eye — reuses the .sn-eye animation from the stylesheet. */
+  function fEye(x, y, r) {
+    r = r || 2.9;
+    return '<g class="sn-eye">' +
+      '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="' + C.ink + '" stroke="none"/>' +
+      '<circle cx="' + (x + r * 0.36) + '" cy="' + (y - r * 0.4) + '" r="' + n(r * 0.34) +
+      '" fill="#fff" stroke="none"/></g>';
+  }
+  function fEyes(y, spread, r) { return fEye(50 - spread, y, r) + fEye(50 + spread, y, r); }
+  function cheeks(y, spread, w) {
+    return ell(50 - spread, y, w || 5.5, (w || 5.5) * 0.7, T(C.pink)[0]).replace('/>', ' stroke="none"/>') +
+      ell(50 + spread, y, w || 5.5, (w || 5.5) * 0.7, T(C.pink)[0]).replace('/>', ' stroke="none"/>');
+  }
+
+  /**
+   * The standing body every friend shares — two little feet, a rounded
+   * belly and stubby arms tucked behind it. `extra` is the head and anything
+   * else drawn over the body.
+   */
+  function friendBody(coat, belly, extra, foot) {
+    var t = T(coat), f = T(foot || coat);
+    return ell(37, 85, 9.5, 6, f[1]) + ell(63, 85, 9.5, 6, f[1]) +
+      ell(27, 64, 7.5, 12, t[2], 18) + ell(73, 64, 7.5, 12, t[2], -18) +
+      blob(50, 66, 22, 21, coat) +
+      ell(50, 72, 14.5, 11.5, T(belly)[0]) +
+      extra;
   }
 
   /** A five-pointed star, flat-filled. */
@@ -465,6 +502,96 @@
         slab(50, 85, 13, 9.5, T(C.gray)[0]) +
         ink('M44 85 l8 2.4 M48 82 l8 2.4 M40 88 l8 2.4', 1.8)
     },
+    /* ── Friends ───────────────────────────────────────────── */
+    {
+      id: 'friend-fox', name: 'Fox', price: 90, cat: 'friend', size: 0.13,
+      art: friendBody(C.peachD, C.cream,
+        '<path d="M32 23 L29 5 L46 16 Z" fill="' + T(C.peachD)[1] + '"/>' +
+        '<path d="M68 23 L71 5 L54 16 Z" fill="' + T(C.peachD)[1] + '"/>' +
+        blob(50, 34, 20, 18, C.peachD) +
+        ell(50, 41, 12.5, 8.5, T(C.white)[0]) +
+        fEyes(32, 7) + cheeks(38, 16, 5) +
+        ell(50, 38, 3.6, 2.7, C.ink).replace('/>', ' stroke="none"/>') +
+        ink('M46 43 q4 3.5 8 0', 2.2))
+    },
+    {
+      id: 'friend-penguin', name: 'Penguin', price: 100, cat: 'friend', size: 0.12,
+      art: friendBody(C.slate, C.white,
+        blob(50, 34, 19.5, 18, C.slate) +
+        ell(50, 39, 13.5, 11, T(C.white)[0]) +
+        fEyes(33, 7) +
+        '<path d="M45 40 L55 40 L50 48 Z" fill="' + T(C.yellow)[1] + '"/>', C.yellow)
+    },
+    {
+      id: 'friend-frog', name: 'Frog', price: 70, cat: 'friend', size: 0.12,
+      art: friendBody(C.green, C.mint,
+        blob(50, 39, 20, 15, C.green) +
+        '<circle cx="36" cy="22" r="10.5" fill="' + T(C.green)[0] + '"/>' +
+        '<circle cx="64" cy="22" r="10.5" fill="' + T(C.green)[0] + '"/>' +
+        fEye(36, 22, 4.6) + fEye(64, 22, 4.6) +
+        cheeks(42, 16, 5) +
+        ink('M38 42 q12 9 24 0', 2.6))
+    },
+    {
+      id: 'friend-hamster', name: 'Hamster', price: 65, cat: 'friend', size: 0.11,
+      art: friendBody(C.peach, C.cream,
+        '<circle cx="36" cy="21" r="6" fill="' + T(C.peach)[1] + '"/>' +
+        '<circle cx="64" cy="21" r="6" fill="' + T(C.peach)[1] + '"/>' +
+        blob(50, 35, 20.5, 18, C.peach) +
+        cheeks(41, 15, 6.5) + fEyes(33, 8) +
+        ell(50, 38, 2.9, 2.2, C.ink).replace('/>', ' stroke="none"/>') +
+        ink('M46 42 q4 3 8 0', 2.2))
+    },
+    {
+      id: 'friend-sheep', name: 'Sheep', price: 95, cat: 'friend', size: 0.13,
+      art: friendBody(C.white, C.white,
+        // wool tufts around the body, then a darker face
+        '<circle cx="33" cy="30" r="9.5" fill="' + T(C.white)[1] + '"/>' +
+        '<circle cx="67" cy="30" r="9.5" fill="' + T(C.white)[1] + '"/>' +
+        '<circle cx="40" cy="20" r="10" fill="' + T(C.white)[1] + '"/>' +
+        '<circle cx="60" cy="20" r="10" fill="' + T(C.white)[1] + '"/>' +
+        '<circle cx="50" cy="16" r="10" fill="' + T(C.white)[0] + '"/>' +
+        ell(28, 40, 8.5, 5, T(C.gray)[1], -20) + ell(72, 40, 8.5, 5, T(C.gray)[1], 20) +
+        blob(50, 39, 16.5, 14, C.gray) +
+        fEyes(37, 6.5, 2.7) + cheeks(44, 11, 4) +
+        ink('M46 44 q4 3 8 0', 2.2))
+    },
+    {
+      id: 'friend-deer', name: 'Deer', price: 120, cat: 'friend', size: 0.14,
+      art: friendBody(C.brown, C.cream,
+        ink('M38 20 L33 4 M35 12 L25 9 M62 20 L67 4 M65 12 L75 9', 3) +
+        ell(30, 33, 7.5, 5, T(C.brown)[1], -22) + ell(70, 33, 7.5, 5, T(C.brown)[1], 22) +
+        blob(50, 34, 19, 18, C.brown) +
+        ell(50, 42, 10, 7, T(C.cream)[0]) +
+        fEyes(32, 7) + cheeks(39, 15, 4.5) +
+        ell(50, 39, 3.2, 2.4, C.ink).replace('/>', ' stroke="none"/>') +
+        // dappled back
+        ell(40, 62, 3.4, 2.4, T(C.cream)[0]).replace('/>', ' stroke="none"/>') +
+        ell(60, 59, 3, 2.1, T(C.cream)[0]).replace('/>', ' stroke="none"/>'))
+    },
+    {
+      id: 'friend-koala', name: 'Koala', price: 110, cat: 'friend', size: 0.13,
+      art: friendBody(C.gray, C.gray,
+        '<circle cx="27" cy="30" r="12" fill="' + T(C.gray)[1] + '"/>' +
+        '<circle cx="73" cy="30" r="12" fill="' + T(C.gray)[1] + '"/>' +
+        '<circle cx="27" cy="30" r="6.5" fill="' + T(C.pink)[0] + '" stroke="none"/>' +
+        '<circle cx="73" cy="30" r="6.5" fill="' + T(C.pink)[0] + '" stroke="none"/>' +
+        blob(50, 34, 20, 18, C.gray) +
+        fEyes(31, 8.5) +
+        ell(50, 40, 7, 8.5, T(C.dark)[1]) +
+        ink('M43 47 q7 4 14 0', 2.2))
+    },
+    {
+      id: 'friend-axolotl', name: 'Axolotl', price: 130, cat: 'friend', size: 0.12,
+      art: friendBody(C.pink, C.pinkL,
+        // gill frills
+        ell(24, 26, 7, 4, T(C.pinkD)[1], -32) + ell(21, 35, 7, 4, T(C.pinkD)[1], -8) +
+        ell(76, 26, 7, 4, T(C.pinkD)[1], 32) + ell(79, 35, 7, 4, T(C.pinkD)[1], 8) +
+        blob(50, 35, 20, 17, C.pink) +
+        fEyes(33, 8, 2.6) + cheeks(40, 14, 5) +
+        ink('M43 40 q7 5 14 0', 2.4))
+    },
+
     {
       id: 'console', name: 'Game Console', price: 100, cat: 'tech', size: 0.11,
       art:
@@ -483,6 +610,7 @@
     { id: 'all', name: 'All' },
     { id: 'walls', name: 'Walls' },
     { id: 'floors', name: 'Floors' },
+    { id: 'friend', name: 'Friends' },
     { id: 'furniture', name: 'Furniture' },
     { id: 'plush', name: 'Plushies' },
     { id: 'plant', name: 'Plants' },

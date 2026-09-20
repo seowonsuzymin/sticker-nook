@@ -1,5 +1,5 @@
 /* ============================================================
-   Room + character artwork
+   Room artwork
    ------------------------------------------------------------
    The room is one SVG drawn in a fixed 1000x760 coordinate space
    (see GEO below). Stickers live in a separate HTML layer stacked
@@ -124,56 +124,6 @@
       'patternUnits="userSpaceOnUse"><g stroke="none">' + content + '</g></pattern>';
   }
 
-  /* ── The character ─────────────────────────────────────── */
-
-  /**
-   * The sitting body, shared by every character. Only the head differs —
-   * that comes from the character catalog in js/data/characters.js.
-   * Limb colour and outfit colour both come from the active profile.
-   */
-  function characterBody(ch, pc, extraClass) {
-    var limb = ch.limb, paw = ch.paw;
-
-    return '' +
-      // crossed legs + socks/paws
-      '<path d="M17 116 q33 -15 66 0 q6 15 -9 20 h-48 q-15 -5 -9 -20 z" fill="' + limb + '"/>' +
-      '<ellipse cx="27" cy="130" rx="12" ry="7.5" fill="' + paw + '"/>' +
-      '<ellipse cx="73" cy="130" rx="12" ry="7.5" fill="' + paw + '"/>' +
-      '<path d="M34 120 q16 7 32 0" fill="none" stroke-width="2.2" opacity=".35"/>' +
-
-      // pinafore dress in the profile's colour
-      '<path d="M50 62 c-16 0 -22 10 -25 25 c-3 15 -7 25 -8 29 q33 12 66 0 c-1 -4 -5 -14 -8 -29 c-3 -15 -9 -25 -25 -25 z" fill="' + pc.dress + '"/>' +
-      '<path d="M25 106 q25 10 50 0" fill="none" stroke-width="2.2" opacity=".3"/>' +
-      '<path d="M39 65 q11 9 22 0" fill="none" stroke-width="2.6"/>' +
-      '<circle cx="50" cy="80" r="3.6" fill="' + pc.hi + '"/>' +
-
-      // arms resting in the lap — drawn over the dress so they stay visible.
-      // Dark pass first for the outline, then the limb fill on top.
-      '<path d="M28 78 q-7 20 11 27" fill="none" stroke="' + INK + '" stroke-width="14" stroke-linecap="round"/>' +
-      '<path d="M72 78 q7 20 -11 27" fill="none" stroke="' + INK + '" stroke-width="14" stroke-linecap="round"/>' +
-      '<path d="M28 78 q-7 20 11 27" fill="none" stroke="' + limb + '" stroke-width="10" stroke-linecap="round"/>' +
-      '<path d="M72 78 q7 20 -11 27" fill="none" stroke="' + limb + '" stroke-width="10" stroke-linecap="round"/>' +
-      '<circle cx="40" cy="105" r="6.5" fill="' + limb + '"/>' +
-      '<circle cx="60" cy="105" r="6.5" fill="' + limb + '"/>' +
-
-      ch.head(pc);
-  }
-
-  function character(theme) {
-    // Outfit colour and species both come from the active profile, so each
-    // save slot is recognisable at a glance.
-    var p = SN.Profiles ? SN.Profiles.active() : null;
-    var pc = SN.Profiles ? SN.Profiles.activeColor() : SN.PROFILE_COLORS[0];
-    var ch = SN.characterFor(p && p.character);
-
-    return '' +
-      '<g class="sn-girl" transform="translate(272,396) scale(1.46)" stroke-width="3">' +
-      '<ellipse cx="50" cy="137" rx="43" ry="10" fill="#000" opacity=".13" stroke="none"/>' +
-      '<g class="sn-girl-bob">' +
-      characterBody(ch, pc) +
-      '</g></g>';
-  }
-
   /* ── Full room ─────────────────────────────────────────── */
 
   SN.buildRoom = function (theme) {
@@ -234,7 +184,6 @@
       '<line x1="' + g.C[0] + '" y1="' + (g.C[1] - SK) + '" x2="' + g.R[0] + '" y2="' + (g.R[1] - SK) + '" stroke-width="3"/>' +
       '<line x1="' + g.CT[0] + '" y1="' + g.CT[1] + '" x2="' + g.C[0] + '" y2="' + g.C[1] + '" stroke-width="4"/>' +
 
-      character(theme) +
       '</svg>';
   };
 

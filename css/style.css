@@ -383,11 +383,8 @@ body.is-dragging { cursor: grabbing; user-select: none; }
 
 /* ── Character idle animation ────────────────────────────── */
 
-.sn-girl-bob { animation: sn-bob 3.6s ease-in-out infinite; }
-@keyframes sn-bob {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
-}
+/* Used by the friend stickers. Profile avatars strip the class, so a wall of
+   save-slot cards doesn't blink in unison. */
 .sn-eye {
   transform-box: fill-box;
   transform-origin: center;

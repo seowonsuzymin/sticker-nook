@@ -24,8 +24,13 @@ The only ceiling is the browser's storage quota; if it's ever reached, the picke
 says so rather than silently losing a nook.
 
 When you make a nook you pick a **character** (Girl, Bear, Cat, Puppy, Bunny or
-Panda) and an **outfit colour**. Your character sits in the room wearing that
-colour and appears on the save-slot card, so your nooks are easy to tell apart.
+Panda) and an **outfit colour**. That character is your nook's identity — it's the
+face on the save-slot card and in the picker. It does **not** appear in the room.
+
+Room characters are a separate cast entirely: the **Friends** stickers (Fox,
+Penguin, Frog, Hamster, Sheep, Deer, Koala, Axolotl), which you buy and place
+like any other sticker, as many as you like. Two casts, two jobs — profile
+characters are avatars, friends are furniture.
 
 Switch nooks any time via ⚙ → **Switch nook**. "Reset progress" only wipes the nook
 you're currently in. Deleting a nook from the picker removes just that slot's save
@@ -53,10 +58,10 @@ js/
   data/iso.js         isometric drawing kit: box, cyl, taper, ball, ring…
   data/stickers.js    the sticker catalog          ← add stickers here
   data/rooms.js       the room themes              ← add rooms here
-  data/characters.js  playable characters          ← add characters here
+  data/characters.js  profile avatars only          ← add avatars here
   profiles.js         save slots: index, per-profile keys, outfit colours
   state.js            state shape + localStorage save/load/reset + event bus
-  art.js              isometric room renderer, the girl character, avatars
+  art.js              isometric room renderer, hex tiles, profile avatars
   room.js             placed stickers: drag, resize, rotate, flip, delete,
                       surface detection, plane shear, depth sorting
   tray.js             sticker tray, category filters, purchase flow
@@ -225,11 +230,12 @@ kind to the theme object the renderer needs.
 Existing saves are migrated forward on load, so new stickers and rooms appear for players
 already mid-game without wiping their progress.
 
-## Adding a character
+## Adding a profile character
 
-Every character shares one sitting body (drawn in `art.js`) and supplies only its
-own head, which is what keeps them looking like one set. Append an entry to
-`CHARACTERS` in `js/data/characters.js`:
+These are **avatars only** — they appear on save-slot cards and in the new-nook
+picker, never in a room. (For a character that goes *in* a room, add a `friend`
+sticker instead; see below.) Every one supplies its own head, which is all that
+gets drawn. Append an entry to `CHARACTERS` in `js/data/characters.js`:
 
 ```js
 {
@@ -248,8 +254,30 @@ own head, which is what keeps them looking like one set. Append an entry to
 
 The head draws into the character's local 100×140 box: the head sits at about
 (50, 42) with a radius of ~27, ears go above it. `eye`/`eyes`/`blush`/`smile`/`bow`
-are shared helpers at the top of the file. The picker tiles and save-slot avatars
-are generated from the same `head`, so there's no second drawing to maintain.
+are shared helpers at the top of the file. `limb` and `paw` are carried on the
+entry for future use; only `head` is drawn today.
+
+## Adding a friend
+
+Friends are the characters that live *in* a room — ordinary stickers with
+`cat: 'friend'`, bought from the Friends tray chip and placed like furniture.
+They share one standing body via `friendBody(coat, belly, extra, foot)` in
+`js/data/stickers.js`, so the cast stays consistent; `extra` is the head and
+anything drawn over the body.
+
+```js
+{
+  id: 'friend-otter', name: 'Otter', price: 105, cat: 'friend', size: 0.13,
+  art: friendBody(C.brown, C.cream,
+    blob(50, 34, 20, 18, C.brown) +
+    fEyes(32, 7) + cheeks(39, 15, 5) +
+    ink('M46 42 q4 3 8 0', 2.2))
+}
+```
+
+Use `fEyes()` rather than plain dots — it carries the `sn-eye` class, so placed
+friends blink. They're floor pieces, so they get a grounding shadow and depth
+sorting for free; stand them on the ground line `ISO.GY` like anything else.
 
 ## Tuning the economy
 
