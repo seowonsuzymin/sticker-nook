@@ -168,6 +168,26 @@
     <div class="settings-who" id="settingsWho"></div>
     <div class="settings-stats" id="settingsStats"></div>
     <div class="settings-list">
+      <!-- Divs, not buttons: a <button> wrapping a range input is invalid
+           HTML and the slider stops accepting drags in several browsers.
+           They borrow .settings-row only for the look. -->
+      <div class="settings-row settings-row-slider">
+        <span class="settings-row-icon">🎵</span>
+        <span class="sr-slider-body">
+          <b><label for="volMusic">Music</label></b>
+          <input class="vol-slider" id="volMusic" type="range" min="0" max="100" step="1"
+                 value="50" aria-label="Music volume">
+          <small>Slide to zero for silence</small>
+        </span>
+      </div>
+      <div class="settings-row settings-row-slider">
+        <span class="settings-row-icon">🔔</span>
+        <span class="sr-slider-body">
+          <b><label for="volSfx">Sound</label></b>
+          <input class="vol-slider" id="volSfx" type="range" min="0" max="100" step="1"
+                 value="80" aria-label="Sound effects volume">
+        </span>
+      </div>
       <button class="settings-row" id="btnSwitchProfile">
         <span class="settings-row-icon">👤</span>
         <span><b>Switch nook</b><small>Back to the profile picker — this nook is saved</small></span>
@@ -222,6 +242,7 @@
 <script src="js/data/characters.js"></script>
 <script src="js/profiles.js"></script>
 <script src="js/state.js"></script>
+<script src="js/audio.js"></script>
 <script src="js/art.js"></script>
 <script src="js/room.js"></script>
 <script src="js/tray.js"></script>

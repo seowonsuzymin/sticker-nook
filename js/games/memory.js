@@ -103,6 +103,7 @@
     if (!s || busy) return;
     if (card.classList.contains('is-up') || card.classList.contains('is-matched')) return;
 
+    SN.Audio.play('game.flip');
     card.classList.add('is-up');
 
     if (!s.first) { s.first = card; return; }

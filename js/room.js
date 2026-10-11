@@ -239,6 +239,10 @@
     if (!hit) return false;
     live.on = hit.uid;
     live.slot = hit.slot;
+    // Covers both snap paths — dropped from the tray and dragged across.
+    SN.Audio.play('sticker.snap');
+    SN.Audio.suppress('sticker.drop', 300);
+    SN.Audio.suppress('sticker.place', 300);
     return true;
   }
 
@@ -324,6 +328,7 @@
     var list = SN.currentLayout();
     var i = list.findIndex(function (p) { return p.uid === uid; });
     if (i === -1) return;
+    SN.Audio.play('sticker.remove');
     // anything shelved here keeps its spot in the room instead of vanishing
     list.forEach(function (q) { if (q.on === uid) unshelve(q); });
     var el = elFor(uid);
@@ -339,6 +344,8 @@
   };
 
   Room.clearRoom = function () {
+    // Bulk clear doesn't go through Room.remove, so it needs its own sweep.
+    SN.Audio.play('sticker.remove');
     SN.state.layouts[SN.state.activeRoom] = [];
     SN.save();
     SN.emit('layout');
@@ -364,7 +371,9 @@
       slot: 0,
       z: topZ() + 1
     };
+    // trySnap plays its own sound and mutes this one when it lands on a shelf.
     trySnap(p);
+    SN.Audio.play('sticker.place');
     SN.currentLayout().push(p);
     var el = buildStickerEl(p);
     el.classList.add('is-popping');
@@ -407,7 +416,10 @@
       var moved = false;
 
       drag(el, e, function (ev) {
-        if (!moved) unshelve(live);       // a tap selects; only a drag lifts it off
+        if (!moved) {
+          unshelve(live);                 // a tap selects; only a drag lifts it off
+          SN.Audio.play('sticker.pick');  // the latch makes this once per drag
+        }
         moved = true;
         var rr = stageRect();
         live.x = SN.clamp((ev.clientX - rr.left) / rr.width + grabDX, EDGE, 1 - EDGE);
@@ -415,7 +427,7 @@
         applyTransform(el, live);
       }, function () {
         if (!moved) return;
-        trySnap(live);
+        if (!trySnap(live)) SN.Audio.play('sticker.drop');
         applyTransform(el, live);
         SN.save();
       });
@@ -456,12 +468,24 @@
       var startAngle = Math.atan2(e.clientY - c.y, e.clientX - c.x);
       var startRot = from.rot;
 
+      var lastDetent = null;
+
       drag(el, e, function (ev) {
         var rr = stageRect();
         var cc = centerPx(live, rr);
         var a = Math.atan2(ev.clientY - cc.y, ev.clientX - cc.x);
         var deg = startRot + (a - startAngle) * 180 / Math.PI;
-        if (ev.shiftKey) deg = Math.round(deg / 15) * 15;   // hold Shift to snap
+        if (ev.shiftKey) {
+          var detent = Math.round(deg / 15);                // hold Shift to snap
+          deg = detent * 15;
+          // Tick when the detent changes, not on every pointermove.
+          if (detent !== lastDetent) {
+            if (lastDetent !== null) SN.Audio.play('sticker.detent');
+            lastDetent = detent;
+          }
+        } else {
+          lastDetent = null;
+        }
         live.rot = Math.round(deg * 10) / 10;
         applyTransform(el, live);
       }, function () { SN.save(); });
@@ -474,6 +498,7 @@
       var live = findPlacement(p.uid);
       if (!live) return;
       live.flip = live.flip ? 0 : 1;
+      SN.Audio.play('sticker.flip');
       applyTransform(el, live);
       SN.save();
     });
@@ -485,6 +510,8 @@
       if (!live) return;
       var next = LAYER_MODES[(LAYER_MODES.indexOf(layerMode(live)) + 1) % LAYER_MODES.length];
       live.layer = next.v;
+      // Pitch says which way it went: up for front, down for back, flat for auto.
+      SN.Audio.play('sticker.layer', { step: next.v * 5 });
       applyTransform(el, live);
       SN.save();
       SN.UI.toast(next.toast);
@@ -536,8 +563,10 @@
     var id = downEvent.pointerId;
     var startX = downEvent.clientX, startY = downEvent.clientY;
     var ghost = null, px = 0, moved = false, cancelled = false;
+    var wasOver = false;      // so the drop-target tick fires on entry, not per move
 
     function makeGhost() {
+      SN.Audio.play('sticker.pick');
       px = def.size * stageRect().width;
       ghost = document.createElement('div');
       ghost.className = 'drag-ghost';
@@ -560,7 +589,14 @@
         makeGhost();
       }
       place(ev.clientX, ev.clientY);
-      stage.classList.toggle('is-drop-target', inStage(ev));
+      var over = inStage(ev);
+      // Edge detection: this runs 60-120 times a second, so only speak when
+      // the answer actually changes.
+      if (over !== wasOver) {
+        if (over) SN.Audio.play('sticker.hover');
+        wasOver = over;
+      }
+      stage.classList.toggle('is-drop-target', over);
     }
 
     function up(ev) {

@@ -58,8 +58,16 @@
     elResultTitle = document.getElementById('arcResultTitle');
 
     document.getElementById('btnPlay').addEventListener('click', Arcade.openRandom);
-    document.getElementById('arcQuit').addEventListener('click', Arcade.close);
-    document.getElementById('btnCollect').addEventListener('click', Arcade.close);
+    // Quit and Collect share a handler but not a mood, so they get their own
+    // listeners for the sound.
+    document.getElementById('arcQuit').addEventListener('click', function () {
+      SN.Audio.play('game.quit');
+      Arcade.close();
+    });
+    document.getElementById('btnCollect').addEventListener('click', function () {
+      SN.Audio.play('coin.gain');
+      Arcade.close();
+    });
     document.getElementById('btnAgain').addEventListener('click', function () {
       elResults.hidden = true;
       begin(game);
@@ -117,14 +125,17 @@
     var n = 3;
     elNum.textContent = n;
     elNum.classList.remove('go');
+    SN.Audio.play('game.count');     // the "3" is painted here, outside the interval
     countdownTimer = setInterval(function () {
       n--;
       if (n > 0) {
         elNum.textContent = n;
+        SN.Audio.play('game.count', { step: (3 - n) * 2 });
         restartAnim(elNum);
       } else if (n === 0) {
         elNum.textContent = 'Go!';
         elNum.classList.add('go');
+        SN.Audio.play('game.go');
         restartAnim(elNum);
       } else {
         clearInterval(countdownTimer);
@@ -178,6 +189,10 @@
     if (raf) { cancelAnimationFrame(raf); raf = null; }
     if (game.stop) game.stop();
 
+    // The fanfare is the sound of the run ending; addCoins below would
+    // otherwise chime over the top of it in the same tick.
+    SN.Audio.play('game.finish');
+    SN.Audio.suppress('coin.gain', 1400);
     SN.addCoins(run.coins);
     var st = SN.state.stats;
     st.plays++;
@@ -214,6 +229,10 @@
   /* ── What games get to work with ───────────────────────── */
 
   function makeCtx() {
+    /* Every hit nudges the pitch up a semitone, so a hot streak climbs and a
+       miss drops you back to the bottom. All three games get it from here. */
+    var streak = 0;
+
     return {
       /** The play area to build into. Cleared automatically between runs. */
       field: field,
@@ -223,6 +242,9 @@
 
       /** Award coins, with a floating "+n" at the given screen position. */
       award: function (n, clientX, clientY, kind) {
+        if (kind === 'gold') SN.Audio.play('game.gold');
+        else SN.Audio.play('game.hit', { step: Math.min(streak, 12) });
+        streak++;
         run.coins += n;
         if (clientX != null) popText('+' + n, clientX, clientY, kind || 'good');
         updateHud();
@@ -230,6 +252,10 @@
 
       /** Take coins away, with a floating "-n" and a screen shake. */
       penalize: function (n, clientX, clientY) {
+        // Only here — penalize calls popText and shake itself, so hooking
+        // those too would fire three sounds for one mistake.
+        SN.Audio.play('game.miss');
+        streak = 0;
         run.coins = Math.max(0, run.coins - n);
         if (clientX != null) popText('-' + n, clientX, clientY, 'bad');
         shake();
@@ -237,9 +263,14 @@
       },
 
       /** Silent coins, e.g. an end-of-round bonus. */
-      bonus: function (n) { run.coins += n; updateHud(); },
+      bonus: function (n) { SN.Audio.play('game.bonus'); run.coins += n; updateHud(); },
 
-      popText: popText,
+      popText: function (text, x, y, kind) {
+        // Games call this directly for combo milestones; the award/penalize
+        // routes above have already spoken for their own pops.
+        if (kind === 'combo') SN.Audio.play('game.combo');
+        popText(text, x, y, kind);
+      },
       shake: shake,
 
       /** Third HUD cell: the text, and whether to make it glow. */
@@ -250,6 +281,8 @@
 
       /** Flash the meter red — for a broken streak. */
       breakMeter: function () {
+        SN.Audio.play('game.break');
+        streak = 0;
         elMeter.classList.add('is-broken');
         setTimeout(function () { elMeter.classList.remove('is-broken'); }, 300);
       },

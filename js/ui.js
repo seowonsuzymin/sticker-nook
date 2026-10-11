@@ -164,23 +164,31 @@
       b.className = 'btn ' + (a.primary ? 'btn-play' : a.danger ? 'btn-danger' : 'btn-ghost');
       b.textContent = a.label;
       b.addEventListener('click', function () {
+        // The button's own sound stands in for the panel closing behind it.
+        SN.Audio.play(a.primary ? 'ui.confirm' : a.danger ? 'ui.danger' : 'ui.cancel');
+        SN.Audio.suppress('ui.close', 400);
         UI.closeModal();
         if (a.onClick) a.onClick();
       });
       actions.appendChild(b);
     });
 
+    SN.Audio.play('ui.open');
     modalOverlay.hidden = false;
     modalEl.classList.remove('is-in');
     void modalEl.offsetWidth;
     modalEl.classList.add('is-in');
   };
 
-  UI.closeModal = function () { modalOverlay.hidden = true; };
+  UI.closeModal = function () {
+    if (!modalOverlay.hidden) SN.Audio.play('ui.close');
+    modalOverlay.hidden = true;
+  };
 
   /* ── Toasts ────────────────────────────────────────────── */
 
   UI.toast = function (msg) {
+    SN.Audio.play('ui.toast');
     var t = document.createElement('div');
     t.className = 'toast';
     t.innerHTML = msg;
@@ -192,6 +200,17 @@
   /* ── Settings ──────────────────────────────────────────── */
 
   function wireSettings() {
+    // `input` rather than `change`, so the volume follows the thumb live.
+    document.getElementById('volMusic').addEventListener('input', function () {
+      SN.Audio.setMusic(this.value / 100);
+    });
+    document.getElementById('volSfx').addEventListener('input', function () {
+      SN.Audio.setSfx(this.value / 100);
+      // A drag fires this dozens of times; ui.preview's own 110ms floor turns
+      // that into a comfortable stream of blips rather than a buzzsaw.
+      SN.Audio.play('ui.preview');
+    });
+
     document.getElementById('btnSettings').addEventListener('click', UI.openSettings);
     document.getElementById('btnCloseSettings').addEventListener('click', UI.closeSettings);
 
@@ -279,10 +298,17 @@
   }
 
   UI.openSettings = function () {
+    SN.Audio.play('ui.open');
+
     // Settings opens from the room grid too, where "this room" means nothing.
     var inRoom = !document.getElementById('app').hidden;
     document.getElementById('btnClearRoom').hidden = !inRoom;
     document.getElementById('btnDeleteRoom').hidden = !inRoom;
+
+    // Keep the sliders honest — volume can have changed from anywhere.
+    var vol = SN.Audio.get();
+    document.getElementById('volMusic').value = Math.round(vol.music * 100);
+    document.getElementById('volSfx').value = Math.round(vol.sfx * 100);
 
     var p = SN.Profiles.active();
     var c = SN.Profiles.colorFor(p.color);
@@ -299,7 +325,10 @@
     settingsOverlay.hidden = false;
   };
 
-  UI.closeSettings = function () { settingsOverlay.hidden = true; };
+  UI.closeSettings = function () {
+    if (!settingsOverlay.hidden) SN.Audio.play('ui.close');
+    settingsOverlay.hidden = true;
+  };
 
   function stat(label, value) {
     return '<div class="stat-cell"><b>' + value + '</b><span>' + label + '</span></div>';

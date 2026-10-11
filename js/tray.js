@@ -30,6 +30,8 @@
 
     catsEl.querySelectorAll('.cat-chip').forEach(function (b) {
       b.addEventListener('click', function () {
+        if (b.dataset.cat === activeCat) return;   // re-tapping the active chip is a no-op
+        SN.Audio.play('ui.chip');
         activeCat = b.dataset.cat;
         catsEl.querySelectorAll('.cat-chip').forEach(function (o) {
           o.classList.toggle('is-active', o.dataset.cat === activeCat);

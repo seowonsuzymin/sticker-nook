@@ -12,6 +12,7 @@
 
   function start() {
     SN.Profiles.init();
+    SN.Audio.init();            // reads volumes; the context waits for a gesture
     SN.UI.init();               // modal / toast / settings chrome — no state needed yet
     SN.ProfileScreen.init();
     SN.RoomSelect.init();
@@ -23,6 +24,12 @@
     if (!SN.Profiles.setActive(profileId)) return;
     SN.Profiles.touch();
     SN.load();
+
+    // One arrival sound for the whole transition: RoomSelect.show() and the
+    // welcome toast below would otherwise pile two more on top of it.
+    SN.Audio.play('nook.enter');
+    SN.Audio.suppress('room.enter', 1200);
+    SN.Audio.suppress('ui.toast', 1200);
 
     if (!mounted) {
       SN.Room.init();

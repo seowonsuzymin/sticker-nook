@@ -144,10 +144,15 @@
     var started = false, abandoned = false, maxDist = 0;
     var holdTimer = touch ? setTimeout(start, HOLD_MS) : null;
 
+    var lastOver = null;      // so the hover tick fires on entry, not per move
+
     function start() {
       holdTimer = null;
       if (abandoned) return;
       started = true;
+      // On touch this lands at the end of the hold, so it doubles as
+      // confirmation that the hold registered.
+      SN.Audio.play('room.pick');
       try { el.setPointerCapture(pid); } catch (err) { /* ignore */ }
       el.classList.add('is-dragging');
       document.body.classList.add('is-dragging');
@@ -178,6 +183,13 @@
         t.classList.remove('is-drop-target');
       });
       if (over) over.classList.add('is-drop-target');
+
+      // Edge detection: this runs on every pointermove, so only tick when
+      // the tile under the cursor actually changes.
+      if (over !== lastOver) {
+        if (over) SN.Audio.play('room.hover');
+        lastOver = over;
+      }
     }
 
     function finish(ev) {
@@ -191,7 +203,9 @@
       var over = tileAt(ev.clientX, ev.clientY, id);
       if (over) {
         swapped = [id, over.dataset.room];
-        SN.swapRooms(id, over.dataset.room);
+        if (SN.swapRooms(id, over.dataset.room)) SN.Audio.play('room.swap');
+      } else {
+        SN.Audio.play('drag.end');       // dropped on nothing; it settles back
       }
       RS.render();
     }
@@ -243,6 +257,7 @@
   /** Open a room for decorating. */
   function enter(id) {
     if (!SN.roomDef(id)) return;
+    SN.Audio.play('room.enter');
     SN.state.activeRoom = id;
     SN.save();
     RS.hide();

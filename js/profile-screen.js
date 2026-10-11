@@ -197,6 +197,10 @@
       return;
     }
     closeDialog();
+    // enterGame plays its own arrival chime a beat later; this one is for
+    // the nook coming into existence.
+    SN.Audio.play('nook.create');
+    SN.Audio.suppress('nook.enter', 900);
     SN.enterGame(p.id);
   }
 
@@ -215,6 +219,7 @@
         { label: 'Keep it', ghost: true },
         {
           label: 'Delete', danger: true, onClick: function () {
+            SN.Audio.play('nook.delete');
             SN.Profiles.remove(id);
             PS.render();
             SN.UI.toast('Nook deleted.');

@@ -371,6 +371,9 @@
   };
 
   SN.addCoins = function (n) {
+    // The arcade pays out even on a zero-coin run, so guard the sound or a
+    // blank result card still chimes like a reward.
+    if (n > 0) SN.Audio.play('coin.gain');
     SN.state.coins = Math.max(0, SN.state.coins + n);
     SN.save();
     SN.emit('coins');
@@ -378,6 +381,7 @@
 
   SN.spendCoins = function (n) {
     if (SN.state.coins < n) return false;
+    SN.Audio.play('coin.spend');
     SN.state.coins -= n;
     SN.save();
     SN.emit('coins');
